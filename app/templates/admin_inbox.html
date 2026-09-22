@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}گفتگوها{% endblock %}
+{% block nav %}
+<nav>
+  <a href="/admin">داشبورد</a>
+  <a href="/admin/inbox" class="active">گفتگوها</a>
+  <a href="/admin/leads">درخواست‌ها</a>
+  <a href="/admin/conflicts">🔀 تعارض‌ها</a>
+  <a href="/admin/consultants">مشاوران</a>
+</nav>
+{% endblock %}
+{% block content %}
+<div class="panel">
+  <h2>💬 گفتگوها (۲۰۰ مورد اخیر)</h2>
+  {% if chats %}
+  <table>
+    <tr><th>نام</th><th>شماره</th><th>وضعیت</th><th>آخرین پیام</th><th>تعداد پیام</th><th>آخرین فعالیت</th><th></th></tr>
+    {% for c in chats %}
+    <tr>
+      <td>{{ c.name }}</td>
+      <td style="direction:ltr;text-align:right;">{{ c.phone or '—' }}</td>
+      <td>{{ c.state_label }}</td>
+      <td>{{ c.last_msg }}</td>
+      <td>{{ c.msg_count }}</td>
+      <td style="font-size:11px;color:#888;">{{ c.updated }}</td>
+      <td><a class="btn small" href="/admin/inbox/{{ c.token }}">مشاهده</a></td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p style="color:#888;font-size:13px;">هنوز گفتگویی ثبت نشده.</p>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>دستیار پذیرش هوشمند — ویجت گفتگو برای مراکز مشاوره</title>
+<style>
+  :root { --green: #2E5E4E; --green2: #3e7a63; --gold: #d4a94e; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Vazirmatn, Tahoma, sans-serif; background: #fff; color: #222; }
+  nav { position: sticky; top: 0; z-index: 100; background: rgba(255,255,255,.95); backdrop-filter: blur(8px); border-bottom: 1px solid #eee; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; }
+  nav .logo { color: var(--green); font-weight: 800; font-size: 17px; }
+  nav .links a { color: #555; text-decoration: none; margin-inline-start: 20px; font-size: 13px; }
+  nav .links a:hover { color: var(--green); }
+  .btn { background: var(--green); color: #fff; border: none; padding: 12px 30px; border-radius: 30px; cursor: pointer; font-family: inherit; font-size: 14px; font-weight: 700; text-decoration: none; display: inline-block; box-shadow: 0 6px 20px rgba(46,94,78,.3); transition: transform .15s; }
+  .btn:hover { transform: translateY(-2px); background: #254c3f; }
+  .btn.ghost { background: transparent; color: var(--green); border: 2px solid var(--green); box-shadow: none; }
+  .hero { background: linear-gradient(135deg, var(--green), var(--green2) 60%, #4d9379); color: #fff; padding: 90px 24px 110px; text-align: center; position: relative; overflow: hidden; }
+  .hero::after { content: ""; position: absolute; bottom: -60px; left: -10%; right: -10%; height: 120px; background: #fff; border-radius: 50% 50% 0 0; }
+  .hero .badge { display: inline-block; background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.35); border-radius: 20px; padding: 5px 18px; font-size: 13px; margin-bottom: 20px; }
+  .hero h1 { font-size: clamp(26px, 5vw, 44px); margin-bottom: 16px; line-height: 1.5; }
+  .hero h1 .gold { color: var(--gold); }
+  .hero p { opacity: .92; font-size: 16px; max-width: 620px; margin: 0 auto 30px; line-height: 2; }
+  .hero .cta { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; position: relative; z-index: 2; }
+  .hero .cta .btn.ghost { color: #fff; border-color: rgba(255,255,255,.7); }
+  .stats { display: flex; justify-content: center; gap: 40px; flex-wrap: wrap; padding: 30px 20px 10px; position: relative; z-index: 2; margin-top: 40px; }
+  .stats .stat { text-align: center; }
+  .stats .num { font-size: 30px; font-weight: 800; }
+  .stats .lbl { font-size: 13px; opacity: .85; }
+  section { max-width: 1000px; margin: 0 auto; padding: 70px 24px 20px; }
+  section h2 { color: var(--green); font-size: 24px; text-align: center; margin-bottom: 10px; }
+  section .sub { color: #777; text-align: center; font-size: 14px; margin-bottom: 40px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 18px; }
+  .fcard { background: #f7faf8; border: 1px solid #e3ece8; border-radius: 16px; padding: 26px 22px; transition: transform .15s, box-shadow .15s; }
+  .fcard:hover { transform: translateY(-4px); box-shadow: 0 10px 28px rgba(46,94,78,.12); }
+  .fcard .ico { font-size: 34px; margin-bottom: 12px; }
+  .fcard b { display: block; font-size: 16px; margin-bottom: 8px; color: var(--green); }
+  .fcard p { font-size: 13px; line-height: 1.9; color: #555; }
+  .steps { display: flex; gap: 0; justify-content: center; flex-wrap: wrap; margin-top: 10px; }
+  .step { flex: 1; min-width: 180px; text-align: center; padding: 20px 10px; position: relative; }
+  .step .n { width: 52px; height: 52px; border-radius: 50%; background: var(--green); color: #fff; font-size: 22px; font-weight: 800; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; }
+  .step b { display: block; font-size: 14px; margin-bottom: 6px; }
+  .step p { font-size: 12px; color: #777; line-height: 1.8; }
+  .pricing-note { background: #fff8e6; border: 1.5px solid #f0d48a; border-radius: 16px; padding: 30px; text-align: center; margin-top: 10px; }
+  .pricing-note b { font-size: 17px; color: #6b5310; }
+  .pricing-note p { font-size: 13px; color: #8a7434; margin: 10px 0 20px; line-height: 2; }
+  footer { background: var(--green); color: #cfe0d8; text-align: center; padding: 34px 20px; margin-top: 70px; font-size: 13px; line-height: 2; }
+  footer a { color: #fff; }
+  .float-note { position: fixed; bottom: 92px; left: 24px; background: #fff; border: 1px solid #e3ece8; border-radius: 14px; box-shadow: 0 8px 28px rgba(0,0,0,.14); padding: 10px 16px; font-size: 12px; color: #555; z-index: 2147483000; max-width: 230px; line-height: 1.9; animation: floaty 3s ease-in-out infinite; display: none; }
+  @keyframes floaty { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">🌿 دستیار پذیرش هوشمند</div>
+  <div class="links">
+    <a href="#features">امکانات</a>
+    <a href="#how">نحوه کار</a>
+    <a href="/admin">ورود</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="badge">✨ ساخته‌شده برای مراکز مشاوره و درمانی</div>
+  <h1>مراجع خود را <span class="gold">هوشمند</span> پذیرش کنید،<br>حتی وقتی خوابید</h1>
+  <p>ویجت چت فارسی که در سایت شما نصب می‌شود: اطلاعات مراجع را می‌گیرد، غربالگری می‌کند، مشاور مناسب را معرفی می‌کند و لید را در پنل شما ثبت می‌کند.</p>
+  <div class="cta">
+    <a class="btn" href="#how">چطور کار می‌کند؟</a>
+    <a class="btn ghost" href="#pricing">درخواست دمو</a>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="num">۲۴/۷</div><div class="lbl">پذیرش بدون توقف</div></div>
+    <div class="stat"><div class="num">۱۲</div><div class="lbl">مرحله پذیرش هوشمند</div></div>
+    <div class="stat"><div class="num">۲۸</div><div class="lbl">سؤال غربالگری GHQ</div></div>
+    <div class="stat"><div class="num">۱</div><div class="lbl">خط کد برای نصب</div></div>
+  </div>
+</div>
+
+<section id="features">
+  <h2>چرا دستیار پذیرش هوشمند؟</h2>
+  <p class="sub">هرچه که یک منشی دقیق انجام می‌دهد — فقط سریع‌تر، دقیق‌تر و بدون خستگی</p>
+  <div class="grid">
+    <div class="fcard"><div class="ico">🧠</div><b>موتور تطبیق مشاور</b><p>بر اساس موضوع، سن، جنسیت، شعبه، نمره GHQ و نوبت‌های آزاد سایت، بهترین مشاوران را با دلیل پیشنهاد می‌دهد.</p></div>
+    <div class="fcard"><div class="ico">📋</div><b>آزمون GHQ-28</b><p>غربالگری سلامت عمومی با ۲۸ سؤال استاندارد و تحلیل بالینی خودکار — قبل از اولین جلسه.</p></div>
+    <div class="fcard"><div class="ico">📥</div><b>ثبت لید و خروجی اکسل</b><p>هر گفتگو با تمام جزئیات ذخیره می‌شود؛ با یک کلیک خروجی اکسل برای تیم فروش بگیرید.</p></div>
+    <div class="fcard"><div class="ico">⚙️</div><b>فلوی کاملاً قابل تنظیم</b><p>سؤالات، پیام خوش‌آمد و نحوه پایان گفتگو را از پنل خودتان و بدون کدنویسی تغییر دهید.</p></div>
+    <div class="fcard"><div class="ico">📣</div><b>اطلاعیه همگانی</b><p>تخفیف، ساعت کاری جدید یا هر خبری را یک‌بار بنویسید تا همه بازدیدکنندگان ببینند.</p></div>
+    <div class="fcard"><div class="ico">🔑</div><b>امن و چندمشتری</b><p>هر مرکز کلید API و پنل جداگانه خودش را دارد؛ داده‌ها کاملاً ایزوله‌اند.</p></div>
+  </div>
+</section>
+
+<section id="how">
+  <h2>در ۳ قدم راه بیفتید</h2>
+  <p class="sub">از ثبت‌نام تا اولین لید، کمتر از یک روز</p>
+  <div class="steps">
+    <div class="step"><div class="n">۱</div><b>کلید API بگیرید</b><p>با ما تماس بگیرید تا حساب و کلید اختصاصی مرکز شما ساخته شود</p></div>
+    <div class="step"><div class="n">۲</div><b>یک خط کد بگذارید</b><p>اسکریپت ویجت را قبل از تگ پایانی body سایتتان قرار دهید</p></div>
+    <div class="step"><div class="n">۳</div><b>لید بگیرید</b><p>گفتگوها، درخواست‌ها و آمار را در پنل خودتان ببینید و خروجی اکسل بگیرید</p></div>
+  </div>
+</section>
+
+<section id="pricing">
+  <h2>اول امتحان کنید، بعد تصمیم بگیرید</h2>
+  <p class="sub">پس از راه‌اندازی حساب شما، دموی اختصاصی مرکز خودتان را از پنل مدیریت می‌بینید</p>
+  <div class="pricing-note">
+    <b>💰 قیمت‌گذاری؟</b>
+    <p>قیمت بر اساس تعداد گفتگو و امکانات (GHQ، موتور معرفی مشاور، کراول نوبت) تعیین می‌شود.<br>برای دریافت پیش‌فاکتور و ساخت حساب دموی اختصاصی، با ما تماس بگیرید.</p>
+    <a class="btn" href="#how">شروع کنید</a>
+  </div>
+</section>
+
+<footer>
+  🌿 دستیار پذیرش هوشمند — ساخته‌شده با ❤️ برای مراکز مشاوره ایران<br>
+  <a href="/admin">ورود به پنل</a>
+</footer>
+
+<div class="float-note" id="float-note" style="display:none;"></div>
+</body>
+</html>

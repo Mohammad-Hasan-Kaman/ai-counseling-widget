@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}درخواست‌ها{% endblock %}
+{% block nav %}
+<nav>
+  <a href="/admin">داشبورد</a>
+  <a href="/admin/inbox">گفتگوها</a>
+  <a href="/admin/leads" class="active">درخواست‌ها</a>
+  <a href="/admin/conflicts">🔀 تعارض‌ها</a>
+</nav>
+{% endblock %}
+{% block content %}
+<div class="panel">
+  <h2>📥 درخواست‌ها (۵۰۰ مورد اخیر)</h2>
+  <a class="btn" href="/admin/export">📊 خروجی اکسل</a>
+  <br><br>
+  {% if rows %}
+  <table>
+    <tr><th>نام</th><th>شماره</th><th>جنسیت</th><th>سن</th><th>موضوع</th><th>GHQ</th><th>مرتبه</th><th>مشاوران پیشنهادی</th><th>تاریخ</th></tr>
+    {% for r in rows %}
+    <tr>
+      <td>{{ r.name }}</td>
+      <td style="direction:ltr;text-align:right;">{{ r.phone }}</td>
+      <td>{{ r.gender or '—' }}</td>
+      <td>{{ r.age or '—' }}</td>
+      <td>{{ r.topic or '—' }}</td>
+      <td>{{ r.ghq if r.ghq is not none else '—' }}</td>
+      <td>{{ r.rn }}</td>
+      <td>{{ r.recs or '—' }}</td>
+      <td style="font-size:11px;color:#888;">{{ r.created }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p style="color:#888;font-size:13px;">هنوز درخواستی ثبت نشده.</p>
+  {% endif %}
+</div>
+{% endblock %}
