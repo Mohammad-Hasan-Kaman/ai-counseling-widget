@@ -1,0 +1,39 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip list *)",
+      "Bash(pip install *)",
+      "Bash(python -c \"import fastapi, uvicorn, itsdangerous, pandas, openpyxl, apscheduler, bs4; print\\('deps ok'\\)\")",
+      "Bash(timeout 25 python -)",
+      "Bash(timeout 40 python -)",
+      "Bash(PYTHONIOENCODING=utf-8 timeout 25 python -)",
+      "Bash(PYTHONIOENCODING=utf-8 python -c ' *)",
+      "Bash(python -X utf8 -c \"import sqlite3; c=sqlite3.connect\\('data/user_records.db'\\); [print\\(t,[r[1] for r in c.execute\\('PRAGMA table_info\\('+t+'\\)'\\).fetchall\\(\\)]\\) for t in ['widget_sessions','widget_messages']]\")",
+      "Bash(dir)",
+      "Bash(python -X utf8 -c ' *)",
+      "Bash(python -X utf8 -c \"print\\('hi'\\)\")",
+      "Bash(python -X utf8 -)",
+      "Bash(cat)",
+      "Bash(python -X utf8 /tmp/xl_probe.py)",
+      "Bash(python xl_probe.py)",
+      "Bash(python xl_probe2.py)",
+      "Bash(python xl_probe3.py)",
+      "Bash(python xl_probe4.py)",
+      "Bash(python xl_probe5.py)",
+      "Bash(python xl_probe6.py)",
+      "Bash(python xl_probe7.py)",
+      "Bash(python xl_probe8.py)",
+      "Bash(python -c \"import app.excel_to_json as m; n=m.convert_excel_to_json\\('data/consultants_1_20260902_232456.xlsx','/tmp/new_profiles.json'\\); print\\('count:',n\\)\")",
+      "Bash(python -c \"import app.excel_to_json as m; n=m.convert_excel_to_json\\('data/consultants_1_20260902_232456.xlsx','data/_test_profiles.json'\\); print\\('count:',n\\)\")",
+      "Bash(python xl_verify.py)",
+      "Bash(del data\\\\_test_profiles.json xl_probe.py xl_probe2.py xl_probe3.py xl_probe4.py xl_probe5.py xl_probe6.py xl_probe7.py xl_probe8.py xl_verify.py)",
+      "Bash(dir *.py)",
+      "Bash(SECRET_KEY=audit SECRET_KEY=audit123 SUPER_ADMIN_PASSWORD=x1 ADMIN_PANEL_PASSWORD=x2 python -X utf8 match_audit.py)",
+      "Bash(python match_audit2.py)",
+      "Bash(python save_audit.py)",
+      "Bash(docker --version)",
+      "Bash(docker compose *)",
+      "Bash(SECRET_KEY=f2 SUPER_ADMIN_PASSWORD=x1 ADMIN_PANEL_PASSWORD=x2 python match_final.py)"
+    ]
+  }
+}

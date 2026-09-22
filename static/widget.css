@@ -1,0 +1,164 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+html { height: -webkit-fill-available; }
+body {
+  font-family: Vazirmatn, Tahoma, sans-serif;
+  direction: rtl;
+  background: #f2f5f4;
+  overflow: hidden;
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+}
+
+#chat-app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  height: 100dvh;
+  height: var(--vvh, 100dvh);
+  max-width: 480px;
+  margin: 0 auto;
+  background: #f2f5f4;
+}
+
+#chat-header {
+  background: #2E5E4E;
+  color: #fff;
+  padding: 14px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+}
+.hd-title { font-size: 14px; font-weight: 700; }
+.hd-sub { font-size: 11px; opacity: .85; margin-top: 3px; }
+#btn-close {
+  background: rgba(255,255,255,.15);
+  border: none; color: #fff;
+  width: 30px; height: 30px; border-radius: 50%;
+  cursor: pointer; font-size: 13px;
+}
+
+/* کانتینر اسکرولی مشترک: پیام‌ها + گزینه‌ها همیشه پشت سر هم — دیگر اسکرول جداگانه لازم نیست */
+#chat-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 12px 4px;
+  scroll-behavior: smooth;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  min-height: 0;
+}
+
+#chat-messages {
+  /* خود پیام‌ها دیگر کانتینر اسکرولی نیستند؛ wrapper والد اسکرول می‌شود */
+  overflow: visible;
+}
+
+.msg {
+  max-width: 85%;
+  padding: 10px 13px;
+  border-radius: 14px;
+  font-size: 13px;
+  line-height: 1.8;
+  margin-bottom: 8px;
+  white-space: pre-line;
+  word-wrap: break-word;
+}
+.msg.bot {
+  background: #fff;
+  color: #24352e;
+  border-radius: 14px 14px 14px 4px;
+  box-shadow: 0 1px 2px rgba(0,0,0,.06);
+  margin-right: 0;
+}
+.msg.user {
+  background: #2E5E4E;
+  color: #fff;
+  border-radius: 14px 14px 4px 14px;
+  margin-left: auto;
+}
+.msg a { color: #1c7a54; font-weight: 600; text-decoration: underline; }
+.msg.bot a { color: #1c7a54; }
+
+.typing { display: inline-flex; gap: 4px; padding: 12px 16px; }
+.typing span {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: #9bb8ab;
+  animation: blink 1.2s infinite;
+}
+.typing span:nth-child(2) { animation-delay: .2s; }
+.typing span:nth-child(3) { animation-delay: .4s; }
+@keyframes blink { 0%, 60%, 100% { opacity: .3; } 30% { opacity: 1; } }
+
+#quick-replies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  padding: 6px 2px 10px;
+  flex-shrink: 0;
+  /* چسبیده به آخرین پیام — همیشه زیر همان سؤال */
+  position: sticky;
+  bottom: 0;
+  background: linear-gradient(transparent, #f2f5f4 30%);
+  padding-top: 14px;
+}
+.chip {
+  background: #fff;
+  border: 1.5px solid #2E5E4E;
+  color: #2E5E4E;
+  border-radius: 20px;
+  padding: 7px 14px;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background .12s;
+}
+.chip:hover { background: #2E5E4E; color: #fff; }
+
+#input-bar {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #fff;
+  border-top: 1px solid #e3e8e6;
+  flex-shrink: 0;
+}
+#msg-input {
+  flex: 1;
+  border: 1.5px solid #d5ded9;
+  border-radius: 22px;
+  padding: 10px 15px;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  direction: rtl;
+}
+#msg-input:focus { border-color: #2E5E4E; }
+#btn-send {
+  background: #2E5E4E;
+  color: #fff;
+  border: none;
+  border-radius: 22px;
+  padding: 0 18px;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+}
+#btn-send:disabled { background: #a8c2b6; cursor: not-allowed; }
+#announcement-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff8e6;
+  border-bottom: 1.5px solid #f0d48a;
+  padding: 10px 12px;
+  flex-shrink: 0;
+}
+.ann-text { flex: 1; font-size: 12px; line-height: 1.7; color: #6b5310; }
+.ann-close {
+  background: none; border: none; color: #6b5310;
+  cursor: pointer; font-size: 13px; padding: 4px;
+}
+
+#input-bar.hidden { display: none; }

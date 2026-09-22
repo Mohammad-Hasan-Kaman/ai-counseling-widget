@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}ورود — پنل مدیریت{% endblock %}
+{% block content %}
+<div class="panel" style="max-width:380px;margin:60px auto;">
+  <h2>🔐 ورود به پنل مدیریت</h2>
+  {% if error %}<div class="flash" style="background:#fdeceb;border-color:#f5c6c2;color:#8a1f1a;">{{ error }}</div>{% endif %}
+  <form method="post" action="/admin/login">
+    <label style="font-size:12px;">نام کاربری</label>
+    <input type="text" name="username" autofocus required>
+    <br><br>
+    <label style="font-size:12px;">رمز عبور</label>
+    <input type="password" name="password" required>
+    <br><br>
+    <button class="btn" style="width:100%;">ورود</button>
+  </form>
+</div>
+{% endblock %}

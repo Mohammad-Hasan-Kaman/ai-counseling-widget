@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}مشاوران — {{ tenant.name }}{% endblock %}
+{% block nav %}
+<nav>
+  <a href="/admin">داشبورد</a>
+  <a href="/admin/inbox">گفتگوها</a>
+  <a href="/admin/conflicts">🔀 تعارض‌ها</a>
+  <a href="/admin/leads">درخواست‌ها</a>
+  <a href="/admin/consultants" class="active">مشاوران</a>
+</nav>
+{% endblock %}
+{% block content %}
+{% if flash %}<div class="flash">{{ flash }}</div>{% endif %}
+
+<div class="panel">
+  <h2>📄 فایل اکسل فعال</h2>
+  {% if excel_info.filename %}
+  <table style="max-width:640px;">
+    <tr><th>فایل</th><td class="mono">{{ excel_info.filename }}</td></tr>
+    <tr><th>تاریخ آپلود</th><td>{{ excel_info.uploaded_at }}</td></tr>
+    <tr><th>مشاوران این فایل</th><td>{{ excel_info.uploaded_count }}</td></tr>
+    <tr><th>مشاوران فعال در موتور</th><td><b>{{ excel_info.total }}</b></td></tr>
+  </table>
+  <br>
+  <a class="btn" href="/admin/consultants/download">⬇️ دانلود دیتای فعلی (اکسل)</a>
+  {% else %}
+  <p style="color:#888;font-size:13px;">هنوز فایلی آپلود نشده — دیتای اولیه از فایل seed بارگذاری شده است.</p>
+  {% endif %}
+</div>
+
+<div class="panel">
+  <h2>📤 آپلود اکسل جدید (جایگزینی کامل)</h2>
+  <form method="post" action="/admin/upload" enctype="multipart/form-data">
+    <div class="row">
+      <div><input type="file" name="file" accept=".xlsx,.xlsm" required></div>
+      <div style="flex:0;"><button class="btn">آپلود و جایگزینی</button></div>
+    </div>
+  </form>
+  <p style="font-size:12px;color:#777;">فرمت ستون‌ها باید مطابق اکسل نمونه مرکز باشد: نام (ستون C)، ضریب توانمندی (B)، محل کار (D)، تحصیلات (E)، حوزه‌های عمومی (F تا R)، موضوعات جزئی (T تا AF)، حوزه کلی (S)، موضوعات آزاد (AF)، محدوده سنی (AG)، پروانه (AH)، ملاحظات (AI). ردیف‌های ۱ و ۲ سرستون‌اند؛ داده از ردیف ۳.</p>
+</div>
+
+<div class="panel">
+  <h2>📋 پیش‌نمایش داده‌ها ({{ rows|length }} مشاور)</h2>
+  <table>
+    <tr><th>نام</th><th>ضریب</th><th>محل کار</th><th>محدوده سنی</th><th>تحصیلات</th><th>حوزه عمومی</th><th>پروانه</th></tr>
+    {% for name, ability, loc, age, edu, ga, lic in rows %}
+    <tr>
+      <td>{{ name }}</td>
+      <td>{{ ability }}</td>
+      <td>{{ loc }}</td>
+      <td>{{ age or '—' }}</td>
+      <td>{{ (edu or '—')[:60] }}</td>
+      <td>{{ (ga or '—')[:50] }}</td>
+      <td>{{ lic or '—' }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+
+<div class="panel">
+  <h2>📊 صحت داده (فیلدهای پرشده)</h2>
+  <table style="max-width:520px;">
+    <tr><th>فیلد</th><th>پرشده</th></tr>
+    <tr><td>ضریب توانمندی</td><td>{{ stats.with_ability }} / {{ stats.total }}</td></tr>
+    <tr><td>محل کار</td><td>{{ stats.with_location }} / {{ stats.total }}</td></tr>
+    <tr><td>تحصیلات/سوابق</td><td>{{ stats.with_education }} / {{ stats.total }}</td></tr>
+    <tr><td>حوزه عمومی</td><td>{{ stats.with_general_area }} / {{ stats.total }}</td></tr>
+    <tr><td>محدوده سنی</td><td>{{ stats.with_age_range }} / {{ stats.total }}</td></tr>
+    <tr><td>پروانه</td><td>{{ stats.with_license }} / {{ stats.total }}</td></tr>
+    <tr><td>ملاحظات</td><td>{{ stats.with_notes }} / {{ stats.total }}</td></tr>
+    <tr><td>تخصص جزئی</td><td>{{ stats.with_specializations }} مشاور ({{ stats.spec_total }} تخصص)</td></tr>
+  </table>
+</div>
+{% endblock %}

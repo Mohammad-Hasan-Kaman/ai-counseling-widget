@@ -1,0 +1,13 @@
+services:
+  widget:
+    build: .
+    container_name: nikravan-widget
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8000:8000"
+    env_file: .env
+    environment:
+      - CRAWLER_ENABLED=1
+    volumes:
+      - ./data:/app/data
+      - ./.env:/app/.env:ro

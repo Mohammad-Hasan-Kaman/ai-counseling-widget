@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}تعارض شماره‌ها — {{ tenant.name }}{% endblock %}
+{% block nav %}
+<nav>
+  <a href="/admin">داشبورد</a>
+  <a href="/admin/inbox">گفتگوها</a>
+  <a href="/admin/leads">درخواست‌ها</a>
+  <a href="/admin/conflicts" class="active">🔀 تعارض شماره‌ها</a>
+  <a href="/admin/consultants">مشاوران</a>
+</nav>
+{% endblock %}
+{% block content %}
+{% if flash %}<div class="flash">{{ flash }}</div>{% endif %}
+
+<div class="panel">
+  <h2>🔀 تعارض شماره‌ها</h2>
+  <p style="font-size:12px;color:#777;">
+    وقتی یک شماره با دو نام متفاوت ثبت شود، هر دو نفر بدون بلاک شدن گفتگو می‌کنند و پرونده‌شان این‌جا کنار هم می‌آید.
+    برای هر شماره یکی را انتخاب کنید: <b>ادغام</b> (یک نفر با دو ثبت)، <b>هر دو واقعی</b> (مثل گوشی مشترک)، یا <b>بایگانی جعلی</b>.
+  </p>
+  {% if not conflicts %}
+  <p style="color:#1c7a54;font-size:13px;">✅ در حال حاضر هیچ تعارضی وجود ندارد.</p>
+  {% endif %}
+</div>
+
+{% for c in conflicts %}
+<div class="panel" style="border-inline-start:4px solid #d4a94e;">
+  <h2 style="font-family:monospace;direction:ltr;text-align:left;">📞 {{ c.phone }}</h2>
+  <table>
+    <tr><th>نام</th><th>وضعیت</th><th>مراجعه</th><th>آخرین فعالیت</th><th>آخرین موضوعات</th></tr>
+    {% for p in c.profiles %}
+    <tr>
+      <td><b>{{ p.full_name }}</b></td>
+      <td>{% if p.status == 'pending' %}<span style="color:#b8860b;font-weight:700;">⏳ در انتظار بررسی</span>{% else %}<span style="color:#1c7a54;">فعال</span>{% endif %}</td>
+      <td>{{ p.request_count }}</td>
+      <td style="font-size:11px;color:#888;">{{ p.last_seen or '—' }}</td>
+      <td style="font-size:12px;">{% for r in p.recent_requests %}{{ r[1] or '—' }}{% if not loop.last %} | {% endif %}{% endfor %}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  <form method="post" action="/admin/conflicts/resolve" id="form_{{ c.phone }}_0" style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+    <input type="hidden" name="phone" value="{{ c.phone }}">
+    <input type="hidden" name="keep" id="keep_{{ c.phone }}" value="{{ c.profiles[0].name_norm }}">
+    <span style="font-size:12px;color:#555;">نام نگه‌داشته‌شده (برای ادغام/بایگانی):</span>
+    <select onchange="document.getElementById('keep_{{ c.phone }}').value = this.value" style="width:auto;font-size:12px;">
+      {% for p in c.profiles %}<option value="{{ p.name_norm }}">{{ p.full_name }}</option>{% endfor %}
+    </select>
+    <button class="btn small" name="action" value="merge"
+      onclick="return confirm('همه پروفایل‌های این شماره در نام انتخاب‌شده ادغام شوند؟ این کار قابل بازگشت نیست.');">🔀 ادغام</button>
+    <button class="btn small" name="action" value="both">👥 هر دو واقعی‌اند</button>
+    <button class="btn small danger" name="action" value="archive"
+      onclick="return confirm('پروفایل‌های دیگر این شماره بایگانی شوند؟');">🗑 بایگانی بقیه</button>
+  </form>
+</div>
+{% endfor %}
+
+{% if suspicious %}
+<div class="panel">
+  <h2>⚠️ شماره‌های مشکوک (فقط اطلاع — بلاک نمی‌شوند)</h2>
+  <p style="font-size:12px;color:#777;">شماره‌هایی مثل 090… یا ارقام تکراری که احتمالاً ساختگی‌اند؛ هنگام تماس بررسی کنید.</p>
+  <table style="max-width:560px;">
+    <tr><th>شماره</th><th>نام</th><th>مراجعه</th><th>آخرین فعالیت</th></tr>
+    {% for s in suspicious %}
+    <tr><td style="direction:ltr;text-align:right;font-family:monospace;">{{ s.phone }}</td><td>{{ s.full_name }}</td><td>{{ s.request_count }}</td><td style="font-size:11px;color:#888;">{{ s.last_seen or '—' }}</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endif %}
+{% endblock %}

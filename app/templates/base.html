@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}پنل مدیریت{% endblock %}</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: Vazirmatn, Tahoma, sans-serif; background: #f4f6f5; margin: 0; color: #222; }
+  header { background: #2E5E4E; color: #fff; padding: 10px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+  header h1 { font-size: 15px; margin: 0; font-weight: 600; }
+  header .who { font-size: 12px; opacity: .85; }
+  nav { background: #254c3f; padding: 0 16px; display: flex; flex-wrap: wrap; }
+  nav a { color: #cfe0d8; text-decoration: none; padding: 10px 14px; font-size: 13px; border-bottom: 3px solid transparent; }
+  nav a:hover { color: #fff; }
+  nav a.active { color: #fff; border-bottom-color: #8fd4b4; }
+  main { max-width: 1150px; margin: 22px auto; padding: 0 16px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; }
+  .card { background: #fff; border-radius: 12px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .card .num { font-size: 26px; font-weight: 700; color: #2E5E4E; }
+  .card .lbl { font-size: 12px; color: #666; margin-top: 4px; }
+  .panel { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,.08); margin-top: 18px; }
+  .panel h2 { font-size: 14px; margin: 0 0 12px; color: #2E5E4E; }
+  .btn { background: #2E5E4E; color: #fff; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-family: inherit; font-size: 13px; text-decoration: none; display: inline-block; }
+  .btn:hover { background: #254c3f; }
+  .btn.small { padding: 5px 12px; font-size: 12px; }
+  .btn.danger { background: #a33; }
+  .btn.danger:hover { background: #8a2a2a; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 8px 10px; border-bottom: 1px solid #eee; text-align: right; vertical-align: top; }
+  th { background: #f0f4f2; color: #444; }
+  select, input[type=text], input[type=password], input[type=number], input[type=file], textarea {
+    font-family: inherit; padding: 8px; border: 1px solid #ccc; border-radius: 8px; font-size: 13px; width: 100%;
+  }
+  textarea { resize: vertical; min-height: 70px; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: end; }
+  .row > div { flex: 1; min-width: 160px; }
+  .flash { background: #eaf5ef; border: 1px solid #bcd9c8; color: #1e4634; padding: 12px 16px; border-radius: 10px; white-space: pre-line; margin-bottom: 16px; font-size: 13px; }
+  .mono { font-family: monospace; direction: ltr; text-align: left; background: #f0f4f2; padding: 3px 8px; border-radius: 6px; font-size: 12px; display: inline-block; }
+  .badge-on { color: #1c7a54; font-weight: 700; }
+  .badge-off { color: #a33; font-weight: 700; }
+  .msg-item { border: 1px solid #e3e8e6; border-radius: 10px; padding: 8px 12px; margin-bottom: 6px; font-size: 13px; }
+  .msg-user { background: #eef5f1; border-color: #cfe0d8; }
+  .msg-bot { background: #fff; }
+  .msg-item .meta { font-size: 11px; color: #999; margin-bottom: 3px; }
+  .steps-table input { min-width: 90px; }
+  details summary { cursor: pointer; font-size: 13px; color: #2E5E4E; }
+</style>
+</head>
+<body>
+<header>
+  <h1>👑 پنل مدیریت{% if user %} — {{ user.username }}{% if user.role == 'super_admin' %} (سوپر ادمین){% endif %}{% endif %}</h1>
+  <form method="post" action="/admin/logout" style="margin:0;"><button class="btn small" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.4);">خروج</button></form>
+</header>
+{% block nav %}{% endblock %}
+<main>
+{% block content %}{% endblock %}
+</main>
+{% block scripts %}{% endblock %}
+</body>
+</html>

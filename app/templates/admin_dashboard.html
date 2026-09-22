@@ -1,0 +1,296 @@
+{% extends "base.html" %}
+{% block title %}داشبورد — {{ tenant.name }}{% endblock %}
+{% block nav %}
+<nav>
+  <a href="/admin" class="active">داشبورد</a>
+  <a href="/admin/inbox">گفتگوها</a>
+  <a href="/admin/leads">درخواست‌ها</a>
+  <a href="/admin/conflicts">🔀 تعارض‌ها</a>
+  <a href="/admin/consultants">مشاوران</a>
+</nav>
+{% endblock %}
+{% block content %}
+{% if flash %}<div class="flash">{{ flash }}</div>{% endif %}
+
+<div class="cards">
+  <div class="card"><div class="num">{{ stats.total_users }}</div><div class="lbl">مراجعین ثبت‌شده</div></div>
+  <div class="card"><div class="num">{{ stats.total_requests }}</div><div class="lbl">کل درخواست‌ها</div></div>
+  <div class="card"><div class="num">{{ stats.total_chats }}</div><div class="lbl">کل گفتگوها</div></div>
+  <div class="card"><div class="num">{{ stats.active_chats }}</div><div class="lbl">گفتگوهای در جریان</div></div>
+  <div class="card"><div class="num">{{ stats.consultant_count }}</div><div class="lbl">مشاوران</div></div>
+  {% if stats.appointments %}
+  <div class="card"><div class="num">{{ stats.free_counselors }}</div><div class="lbl">مشاوران با نوبت آزاد (آخرین کراول)</div></div>
+  <div class="card"><div class="num">{{ stats.total_free_slots }}</div><div class="lbl">کل نوبت‌های آزاد</div></div>
+  {% endif %}
+</div>
+
+{% if stats.appointments %}
+<div class="panel">
+  <h2>🗓 وضعیت نوبت‌ها (آخرین کراول از nikravan.org)</h2>
+  {% if stats.crawl_health %}
+    {% if stats.crawl_health.stale %}
+    <p style="font-size:13px;background:#fdeceb;border:1px solid #f5c6c2;color:#8a1f1a;border-radius:8px;padding:10px 14px;">
+      ⚠️ <b>هشدار کهنگی داده:</b>
+      {% if stats.crawl_health.age_minutes is not none %}
+      آخرین کراول موفق <b>{{ stats.crawl_health.age_minutes }}</b> دقیقه پیش ({{ stats.crawl_health.finished_at }}) انجام شده و دیتای نوبت‌ها ممکن است قدیمی باشد.
+      {% else %}
+      هنوز هیچ کراول موفقی ثبت نشده است.
+      {% endif %}
+      {% if not stats.crawl_health.ok %}آخرین دوره با خطا تمام شد: {{ stats.crawl_health.error or '—' }}{% endif %}
+      لطفاً «اجرای کراول دستی» را بزنید یا لاگ سرور را بررسی کنید.
+    </p>
+    {% else %}
+    <p style="font-size:12px;color:#1c7a54;background:#eaf5ef;border-radius:8px;padding:8px 14px;">
+      ✅ آخرین کراول موفق: {{ stats.crawl_health.finished_at }}
+      ({{ stats.crawl_health.done }} مشاور، {{ stats.crawl_health.free_slots }} نوبت آزاد)
+    </p>
+    {% endif %}
+  {% endif %}
+  <table style="max-width:480px;">
+    <tr><th>وضعیت</th><th>تعداد مشاور</th></tr>
+    {% for status, count in stats.appointments.items() %}
+    <tr><td>{{ CRAWL_LABELS.get(status, status) }}</td><td>{{ count }}</td></tr>
+    {% endfor %}
+  </table>
+  <p style="font-size:13px;margin-top:10px;">
+    نتیجه آخرین کراول: از <b>{{ stats.site_total }}</b> مشاور ثبت‌شده در سایت،
+    <b>{{ stats.free_counselors }}</b> نفر دارای نوبت آزاد بودند (مجموعاً {{ stats.total_free_slots }} نوبت خالی).<br>
+    📌 از <b>{{ stats.consultant_count }}</b> مشاور فعال در اکسل شما، <b>{{ stats.active_with_free }}</b> نفر الان نوبت آزاد دارند.
+  </p>
+  {% if stats.top_free %}
+  <p style="font-size:13px;margin-top:10px;"><b>بیشترین نوبت آزاد (کل سایت):</b>
+    {% for n, c in stats.top_free %}{{ n }} ({{ c }}){% if not loop.last %}، {% endif %}{% endfor %}
+  </p>
+  {% endif %}
+</div>
+{% endif %}
+
+<div class="panel">
+  <h2>🔑 کلید API و کد embed</h2>
+  <p style="font-size:13px;">کلید API شما: <span class="mono" id="apikey">{{ tenant.api_key }}</span>
+    <button class="btn small" onclick="navigator.clipboard.writeText(document.getElementById('apikey').textContent)">کپی</button>
+  </p>
+  <p style="font-size:12px;color:#777;">کد embed در سایت (قبل از &lt;/body&gt;):</p>
+  <textarea readonly rows="2" style="direction:ltr;text-align:left;font-family:monospace;font-size:11px;" id="embed-code">&lt;script src="{{ request.base_url }}static/widget.js" data-origin="{{ request.base_url }}" data-key="{{ tenant.api_key }}" data-brand="گفتگو با {{ tenant.name }}" async&gt;&lt;/script&gt;</textarea>
+  <p style="font-size:12px;color:#777;margin-top:10px;">🎯 <b>دموی زنده اختصاصی شما:</b> ویجت با همان فلویی که در «تنظیم فلو» ذخیره کرده‌اید کار می‌کند و گفتگوهایش در پنل خودتان ثبت می‌شود.
+    <a class="btn small" style="margin-inline-start:8px;" href="/demo/{{ tenant.api_key }}" target="_blank">مشاهده دموی من ↗</a>
+  </p>
+</div>
+
+<div class="panel">
+  <h2>📣 اطلاعیه (پیام همگانی — در باز شدن بعدی ویجت نمایش داده می‌شود)</h2>
+  <form method="post" action="/admin/announcement">
+    <textarea name="text" placeholder="متن اطلاعیه...">{{ announcement or '' }}</textarea>
+    <br><br>
+    <div class="row">
+      <div>
+        <select name="active">
+          <option value="0" {% if not announcement %}selected{% endif %}>غیرفعال</option>
+          <option value="1" {% if announcement %}selected{% endif %}>فعال</option>
+        </select>
+      </div>
+      <div style="flex:0;"><button class="btn">ذخیره اطلاعیه</button></div>
+    </div>
+  </form>
+</div>
+
+<div class="panel">
+  <h2>⚙️ تنظیم فلوی گفتگو</h2>
+  <form method="post" action="/admin/flow" id="flow-form">
+    <label style="font-size:12px;">پیام خوش‌آمد</label>
+    <textarea name="welcome" required>{{ flow.welcome }}</textarea>
+    <br>
+    <label style="font-size:12px;">مراحل (کلید | نوع | سؤال | گزینه‌های با |)</label>
+    <table class="steps-table" id="steps-table">
+      <thead><tr><th>کلید</th><th>نوع</th><th>سؤال (اختیاری)</th><th>گزینه‌ها</th><th></th></tr></thead>
+      <tbody>
+        {% for s in flow.steps %}
+        <tr {% if s.conditional %}data-conditional="{{ s.conditional }}"{% endif %}>
+          <td><input name="step_key" value="{{ s.key }}"></td>
+          <td><select name="step_type">
+            {% for val, lbl in step_types.items() %}<option value="{{ val }}" {% if s.type == val %}selected{% endif %}>{{ lbl }}</option>{% endfor %}
+          </select></td>
+          <td><input name="step_label" value="{{ s.label or '' }}"></td>
+          <td><input name="step_options" value="{{ s.options | join(' | ') if s.options else '' }}" placeholder="بله | خیر"></td>
+          <td><button type="button" class="btn small danger" onclick="this.closest('tr').remove()">✕</button></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <button type="button" class="btn small" onclick="addStep()">+ افزودن مرحله</button>
+    <br><br>
+    <div class="row">
+      <div>
+        <label style="font-size:12px;">آزمون GHQ-28</label>
+        <select name="ghq">
+          <option value="0" {% if not flow.ghq %}selected{% endif %}>غیرفعال</option>
+          <option value="1" {% if flow.ghq %}selected{% endif %}>فعال</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:12px;">پایان گفتگو</label>
+        <select name="ending">
+          <option value="lead_capture" {% if flow.ending != 'recommend' %}selected{% endif %}>ثبت لید (پیام تشکر)</option>
+          <option value="recommend" {% if flow.ending == 'recommend' %}selected{% endif %}>معرفی مشاور (موتور هوشمند)</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:12px;">پیام تشکر</label>
+        <input type="text" name="thanks_text" value="{{ flow.thanks_text }}">
+      </div>
+    </div>
+    <br>
+    <input type="hidden" name="steps_json" id="steps-json">
+    <button class="btn">ذخیره فلو</button>
+  </form>
+</div>
+
+<div class="panel">
+  <h2>👥 مشاوران</h2>
+  {% if excel_info.filename %}
+  <p style="font-size:13px;">فایل فعال: <span class="mono">{{ excel_info.filename }}</span> — {{ excel_info.total }} مشاور (آپلود: {{ excel_info.uploaded_at }})</p>
+  {% else %}
+  <p style="font-size:13px;color:#888;">{{ excel_info.total }} مشاور فعال در موتور.</p>
+  {% endif %}
+  <a class="btn" href="/admin/consultants">مدیریت و آپلود اکسل مشاوران</a>
+</div>
+
+{% if tenant.slug == 'nikravan' %}
+<div class="panel" id="crawl-panel">
+  <h2>🔄 کراول نوبت‌ها</h2>
+  <div id="crawl-progress" style="display:none;">
+    <div style="display:flex;justify-content:space-between;font-size:12px;color:#555;margin-bottom:4px;">
+      <span id="crawl-label">در حال اجرا...</span>
+      <span id="crawl-count"></span>
+    </div>
+    <div style="background:#e6ede9;border-radius:8px;height:14px;overflow:hidden;">
+      <div id="crawl-bar" style="background:linear-gradient(90deg,#2E5E4E,#4d9379);height:100%;width:0%;transition:width .8s ease;border-radius:8px;"></div>
+    </div>
+    <p id="crawl-detail" style="font-size:12px;color:#777;margin-top:6px;"></p>
+  </div>
+  <form method="post" action="/admin/crawl"><button class="btn" id="crawl-btn" {% if crawl_running %}disabled style="opacity:.5;cursor:not-allowed;"{% endif %}>اجرای کراول دستی</button></form>
+</div>
+{% endif %}
+
+{% if excel_info.total > 0 %}
+<div class="panel">
+  <h2>🧠 ثبت بازخورد برای سیستم خودآموز</h2>
+  <form method="post" action="/admin/feedback">
+    <div class="row">
+      <div>
+        <label style="font-size:12px;">مشاور</label>
+        <input type="text" name="counselor_name" list="counselors" required placeholder="نام مشاور...">
+        <datalist id="counselors">
+          {% for name in counselor_names %}<option value="{{ name }}">{% endfor %}
+        </datalist>
+      </div>
+      <div>
+        <label style="font-size:12px;">مفهوم</label>
+        <select name="concept_num">
+          {% for num, label in concepts.items() %}<option value="{{ num }}">{{ num }} — {{ label }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label style="font-size:12px;">نتیجه</label>
+        <select name="verdict">
+          <option value="بله">بله (موفق — تقویت)</option>
+          <option value="خیر">خیر (ناموفق — تضعیف)</option>
+        </select>
+      </div>
+      <div style="flex:0;"><button class="btn">ثبت بازخورد</button></div>
+    </div>
+  </form>
+</div>
+
+<div class="panel">
+  <h2>📊 وضعیت یادگیری (۲۰ رکورد آخر)</h2>
+  {% if learning %}
+  <table>
+    <tr><th>مشاور</th><th>مفهوم</th><th>✅ مثبت</th><th>❌ منفی</th><th>وزن فعلی</th></tr>
+    {% for n, c, p, ng, w in learning %}
+    <tr>
+      <td>{{ n }}</td><td>{{ c }}</td><td>{{ p }}</td><td>{{ ng }}</td>
+      <td>×{{ '%.2f'|format(w) }} {% if w > 1.0 %}⬆️{% elif w < 1.0 %}⬇️{% else %}➖{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p style="color:#888;font-size:13px;">هنوز داده یادگیری ثبت نشده.</p>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script>
+function addStep() {
+  const tb = document.querySelector('#steps-table tbody');
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><input name="step_key" placeholder="q_new"></td>
+    <td><select name="step_type">
+      <option value="text">متن آزاد</option><option value="phone">شماره تماس</option>
+      <option value="number">عدد</option><option value="choice">گزینه‌ای</option>
+    </select></td>
+    <td><input name="step_label" placeholder="سؤال"></td>
+    <td><input name="step_options" placeholder="بله | خیر"></td>
+    <td><button type="button" class="btn small danger" onclick="this.closest('tr').remove()">✕</button></td>`;
+  tb.appendChild(tr);
+}
+document.getElementById('flow-form').addEventListener('submit', function () {
+  const rows = document.querySelectorAll('#steps-table tbody tr');
+  const steps = [];
+  rows.forEach(function (r) {
+    const key = r.querySelector('[name=step_key]').value.trim();
+    if (!key) return;
+    const step = {
+      key: key,
+      type: r.querySelector('[name=step_type]').value,
+      label: r.querySelector('[name=step_label]').value,
+      options: r.querySelector('[name=step_options]').value,
+    };
+    const cond = r.getAttribute('data-conditional');
+    if (cond) step.conditional = cond;
+    steps.push(step);
+  });
+  document.getElementById('steps-json').value = JSON.stringify(steps);
+});
+
+// ── polling زنده وضعیت کراول دستی (فقط نیک‌روان) ──
+(function () {
+  var panel = document.getElementById('crawl-panel');
+  if (!panel) return;
+  var box = document.getElementById('crawl-progress');
+  var bar = document.getElementById('crawl-bar');
+  var label = document.getElementById('crawl-label');
+  var count = document.getElementById('crawl-count');
+  var detail = document.getElementById('crawl-detail');
+  var btn = document.getElementById('crawl-btn');
+  var hadRunning = false;
+
+  function poll() {
+    fetch('/admin/crawl/status', { cache: 'no-store' })
+      .then(function (r) { if (r.status === 401) { window.location = '/admin/login'; return null; } return r.json(); })
+      .then(function (s) {
+        if (!s) return;
+        if (s.running) {
+          hadRunning = true;
+          box.style.display = 'block';
+          if (btn) { btn.disabled = true; btn.style.opacity = '.5'; btn.textContent = '⏳ در حال کراول...'; }
+          var pct = s.total ? Math.round((s.done / s.total) * 100) : 0;
+          bar.style.width = pct + '%';
+          label.textContent = 'در حال بررسی صفحات سایت nikravan.org';
+          count.textContent = s.total ? (s.done + ' از ' + s.total + ' — ' + pct + '٪') : '...';
+          detail.textContent = (s.current ? 'در حال بررسی: ' + s.current : '') +
+            ' | 🟢 ' + (s.free_total || 0) + ' نوبت آزاد تاکنون' +
+            (s.started_at ? ' | شروع: ' + s.started_at : '');
+        } else if (hadRunning) {
+          window.location.reload();
+        }
+      })
+      .catch(function () {});
+  }
+  poll();
+  setInterval(poll, 8000);
+})();
+</script>
+{% endblock %}

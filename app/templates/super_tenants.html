@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+{% block title %}مدیریت مشتریان — سوپر ادمین{% endblock %}
+{% block nav %}
+<nav>
+  <a href="/admin" class="active">مشتریان</a>
+  <a href="/admin/password">تغییر رمز</a>
+</nav>
+{% endblock %}
+{% block content %}
+{% if flash %}<div class="flash">{{ flash }}</div>{% endif %}
+
+<style>
+  .t-card { background: #fff; border-radius: 12px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,.08); margin-top: 14px; border-inline-start: 4px solid #2E5E4E; }
+  .t-card.inactive { border-inline-start-color: #a33; background: #fdf6f5; }
+  .t-head { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+  .t-head .t-name { font-size: 16px; font-weight: 700; color: #2E5E4E; }
+  .t-head .t-slug { font-size: 12px; color: #888; font-family: monospace; direction: ltr; }
+  .badge { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 12px; }
+  .badge.on { background: #eaf5ef; color: #1c7a54; }
+  .badge.off { background: #fdeceb; color: #a33; }
+  .t-stats { display: flex; gap: 22px; flex-wrap: wrap; margin: 12px 0; }
+  .t-stat { text-align: center; min-width: 64px; }
+  .t-stat .n { font-size: 20px; font-weight: 800; color: #2E5E4E; }
+  .t-stat .l { font-size: 11px; color: #777; }
+  .t-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .keyline { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; background: #f0f4f2; border-radius: 8px; padding: 7px 12px; margin: 8px 0; font-size: 12px; }
+  .keyline .mono { font-size: 12px; }
+  .mini { padding: 4px 10px; font-size: 11px; border-radius: 6px; }
+  .t-ops { display: none; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #d5e0da; }
+  .t-ops.open { display: block; }
+  .op-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
+  .op-row label { font-size: 11px; color: #666; min-width: 90px; }
+  .op-row input[type=text], .op-row input[type=password] { width: 220px; padding: 6px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 12px; font-family: inherit; }
+  .searchbar { display: flex; gap: 10px; align-items: center; margin-top: 4px; flex-wrap: wrap; }
+  .searchbar input { max-width: 320px; }
+  .searchbar .count { font-size: 12px; color: #777; }
+  details summary { font-size: 13px; color: #2E5E4E; cursor: pointer; }
+  #create-panel { background: #fff; border-radius: 12px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,.08); margin-top: 4px; }
+  #create-panel summary { font-weight: 700; color: #2E5E4E; font-size: 14px; }
+</style>
+
+<div class="panel">
+  <h2>🏢 مشتریان</h2>
+  <div class="searchbar">
+    <input type="text" id="tenant-search" placeholder="🔍 جستجو بر اساس نام یا شناسه..." style="max-width:320px;">
+    <span class="count" id="tenant-count"></span>
+  </div>
+</div>
+
+<details id="create-panel">
+  <summary>➕ ساخت مشتری جدید</summary>
+  <div style="margin-top:14px;">
+    <form method="post" action="/admin/super/tenants">
+      <div class="row">
+        <div><label style="font-size:12px;">نام مرکز</label><input type="text" name="name" required placeholder="کلینیک مهر"></div>
+        <div><label style="font-size:12px;">نام کاربری ادمین</label><input type="text" name="admin_username" required placeholder="mehr1" style="direction:ltr;"></div>
+        <div><label style="font-size:12px;">رمز ادمین (۸+)</label><input type="password" name="admin_password" required minlength="8"></div>
+        <div><label style="font-size:12px;">دامنه‌های مجاز (کاما جدا، اختیاری)</label><input type="text" name="allowed_domains" placeholder="example.com" style="direction:ltr;"></div>
+        <div style="flex:0;"><button class="btn">ساخت مشتری</button></div>
+      </div>
+    </form>
+  </div>
+</details>
+
+<div id="tenant-list">
+{% for t in tenants %}
+<div class="t-card {% if not t.active %}inactive{% endif %}" data-name="{{ t.name }}" data-slug="{{ t.slug }}">
+  <div class="t-head">
+    <div>
+      <span class="t-name">{{ t.name }}</span>
+      <span class="t-slug"> · {{ t.slug }}</span>
+      {% if t.active %}<span class="badge on">فعال</span>{% else %}<span class="badge off">غیرفعال</span>{% endif %}
+    </div>
+    <div class="t-actions">
+      <a class="btn small" href="/demo/{{ t.api_key }}" target="_blank" title="دموی زنده با کلید این مشتری">🎯 دمو</a>
+      <button class="btn small mini" type="button" onclick="toggleOps(this)">⚙️ مدیریت</button>
+    </div>
+  </div>
+
+  <div class="t-stats">
+    <div class="t-stat"><div class="n">{{ t.leads }}</div><div class="l">لید</div></div>
+    <div class="t-stat"><div class="n">{{ t.chats }}</div><div class="l">گفتگو</div></div>
+    <div class="t-stat"><div class="n">{{ t.consultants }}</div><div class="l">مشاور</div></div>
+    <div class="t-stat"><div class="n" style="font-size:12px;direction:ltr;">{{ t.created or '—' }}</div><div class="l">تاریخ ساخت</div></div>
+  </div>
+
+  <div class="keyline">
+    <span style="color:#666;">کلید API:</span>
+    <span class="mono" data-full="{{ t.api_key }}">{{ t.api_key[:8] }}••••••••</span>
+    <button class="btn small mini" type="button" onclick="toggleKey(this)">نمایش</button>
+    <button class="btn small mini" type="button" onclick="copyKey(this)">کپی</button>
+  </div>
+  {% if t.domains %}
+  <div style="font-size:11px;color:#777;">دامنه‌های مجاز: <span style="direction:ltr;unicode-bidi:embed;">{{ t.domains }}</span></div>
+  {% else %}
+  <div style="font-size:11px;color:#aaa;">بدون محدودیت دامنه</div>
+  {% endif %}
+
+  <div class="t-ops">
+    <div class="op-row">
+      <form method="post" action="/admin/super/tenants/{{ t.id }}/regenerate-key"
+            onsubmit="return confirm('🔑 کلید API «{{ t.name }}» بازتولید شود؟ کلید قبلی باطل می‌شود و ویجت و لینک دموی فعلی از کار می‌افتد!');">
+        <button class="btn small danger">🔑 بازتولید کلید API</button>
+      </form>
+      <form method="post" action="/admin/super/tenants/{{ t.id }}/toggle"
+            onsubmit="return confirm('{% if t.active %}⚠️ «{{ t.name }}» غیرفعال شود؟ ویجت سایتش و دمویش بلافاصله قطع می‌شود.{% else %}«{{ t.name }}» فعال شود؟{% endif %}');">
+        <button class="btn small {% if t.active %}danger{% endif %}">{% if t.active %}⏸ غیرفعال‌سازی{% else %}▶️ فعال‌سازی{% endif %}</button>
+      </form>
+    </div>
+
+    <div class="op-row">
+      <form method="post" action="/admin/super/tenants/{{ t.id }}/reset-password" class="op-row" style="margin:0;"
+            onsubmit="return confirm('رمز ادمین(های) «{{ t.name }}» ریست شود؟');">
+        <label>ریست رمز ادمین:</label>
+        <input type="password" name="new_password" placeholder="رمز جدید (۸+)" required minlength="8">
+        <button class="btn small">ذخیره رمز</button>
+      </form>
+    </div>
+
+    <div class="op-row">
+      <form method="post" action="/admin/super/tenants/{{ t.id }}/domains" class="op-row" style="margin:0;">
+        <label>دامنه‌های مجاز:</label>
+        <input type="text" name="allowed_domains" value="{{ t.domains }}" placeholder="example.com, www.example.com" style="direction:ltr;">
+        <button class="btn small">ذخیره دامنه‌ها</button>
+      </form>
+    </div>
+
+    <div class="op-row">
+      <form method="post" action="/admin/super/tenants/{{ t.id }}/add-admin" class="op-row" style="margin:0;">
+        <label>افزودن ادمین:</label>
+        <input type="text" name="admin_username" placeholder="username" style="direction:ltr;" required>
+        <input type="password" name="admin_password" placeholder="رمز (۸+)" minlength="8" required>
+        <button class="btn small">+ ادمین</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endfor %}
+</div>
+{% if not tenants %}
+<p style="color:#888;">مشتری‌ای ثبت نشده.</p>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script>
+function toggleOps(btn) {
+  var card = btn.closest('.t-card');
+  var ops = card.querySelector('.t-ops');
+  var open = ops.classList.toggle('open');
+  btn.textContent = open ? '✕ بستن' : '⚙️ مدیریت';
+}
+
+function toggleKey(btn) {
+  var span = btn.parentElement.querySelector('.mono');
+  var full = span.getAttribute('data-full');
+  if (btn.textContent === 'نمایش') {
+    span.textContent = full;
+    btn.textContent = 'پنهان';
+  } else {
+    span.textContent = full.slice(0, 8) + '••••••••';
+    btn.textContent = 'نمایش';
+  }
+}
+
+function copyKey(btn) {
+  var span = btn.parentElement.querySelector('.mono');
+  var full = span.getAttribute('data-full');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(full).then(function () {
+      btn.textContent = '✓ کپی شد';
+      setTimeout(function () { btn.textContent = 'کپی'; }, 1500);
+    });
+  } else {
+    var ta = document.createElement('textarea');
+    ta.value = full;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    ta.remove();
+    btn.textContent = '✓ کپی شد';
+    setTimeout(function () { btn.textContent = 'کپی'; }, 1500);
+  }
+}
+
+document.getElementById('tenant-search').addEventListener('input', function () {
+  var q = this.value.trim().toLowerCase();
+  var cards = document.querySelectorAll('#tenant-list .t-card');
+  var shown = 0;
+  cards.forEach(function (c) {
+    var name = (c.getAttribute('data-name') || '').toLowerCase();
+    var slug = (c.getAttribute('data-slug') || '').toLowerCase();
+    var hit = !q || name.indexOf(q) > -1 || slug.indexOf(q) > -1;
+    c.style.display = hit ? '' : 'none';
+    if (hit) shown++;
+  });
+  document.getElementById('tenant-count').textContent = shown + ' از ' + cards.length + ' مشتری';
+});
+document.getElementById('tenant-count').textContent = document.querySelectorAll('#tenant-list .t-card').length + ' مشتری';
+</script>
+{% endblock %}
