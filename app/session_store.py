@@ -449,12 +449,19 @@ def _recommend(session: dict, flow: dict) -> BotReply:
 
     recs = engine.match(user_info, tenant_id)
 
-    if not recs:
-        return BotReply("متأسفانه در حال حاضر مشاوری با این مشخصات یافت نشد.")
-
+    # ثبت lead حتی وقتی هیچ مشاوری پیدا نشد — درخواست کاربر نباید گم شود
     req_number = save_user_consultation(
         session["token"], user_info, recs, tenant_id, data.get("_custom")
     )
+
+    if not recs:
+        tenant_name = flow.get("_tenant_name") or "مرکز"
+        badge = f" با شماره **{req_number}**" if req_number > 1 else ""
+        return BotReply(
+            "متأسفانه در حال حاضر مشاوری با این مشخصات یافت نشد؛ "
+            f"اما درخواست شما{badge} در {tenant_name} ثبت شد و کارشناسان ما با شما تماس می‌گیرند.\n\n"
+            "✨ برای ثبت درخواست جدید، گزینه «شروع مجدد» را انتخاب کنید."
+        )
 
     ghq = user_info["ghq_scores"]
     ghq_lvl = "severe" if (ghq and ghq.get("total", 0) >= 43) else "normal"
