@@ -39,7 +39,7 @@ body {
   cursor: pointer; font-size: 13px;
 }
 
-/* کانتینر اسکرولی مشترک: پیام‌ها + گزینه‌ها همیشه پشت سر هم — دیگر اسکرول جداگانه لازم نیست */
+/* shared scroll container: messages + options always follow each other — no separate scrolling needed anymore */
 #chat-scroll {
   flex: 1;
   overflow-y: auto;
@@ -51,7 +51,7 @@ body {
 }
 
 #chat-messages {
-  /* خود پیام‌ها دیگر کانتینر اسکرولی نیستند؛ wrapper والد اسکرول می‌شود */
+  /* the messages themselves are no longer a scroll container; the parent wrapper scrolls */
   overflow: visible;
 }
 
@@ -97,7 +97,7 @@ body {
   gap: 7px;
   padding: 6px 2px 10px;
   flex-shrink: 0;
-  /* چسبیده به آخرین پیام — همیشه زیر همان سؤال */
+  /* sticks to the last message — always right under that question */
   position: sticky;
   bottom: 0;
   background: linear-gradient(transparent, #f2f5f4 30%);

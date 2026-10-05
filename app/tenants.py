@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""مدیریت مشتریان (tenant): ساخت، کلید API، seed اولیه"""
+"""Tenant management: creation, API keys, initial seeding"""
 import json
 import secrets
 import re
@@ -44,7 +44,7 @@ def slugify(name: str) -> str:
 
 def create_tenant(name: str, admin_username: str, admin_password: str,
                   allowed_domains: str = "") -> dict:
-    """ساخت مشتری + ادمین اول آن. خروجی: {tenant_id, api_key}"""
+    """Create a tenant + its first admin. Returns: {tenant_id, api_key}"""
     conn = get_conn(USER_RECORDS_DB)
     cur = conn.cursor()
     base_slug = slugify(name)
@@ -69,7 +69,7 @@ def create_tenant(name: str, admin_username: str, admin_password: str,
 
 
 def default_public_flow() -> dict:
-    """فلوی پیش‌فرض برای مشتری‌های عمومی: فقط نام و شماره + ثبت لید"""
+    """Default flow for public tenants: name and phone only + lead capture"""
     return {
         "welcome": (
             "🌸 **سلام! خوش آمدید.**\n\n"
@@ -88,7 +88,7 @@ def default_public_flow() -> dict:
 
 
 def _parse_flow_config(raw: str | None) -> dict:
-    """flow_config خراب یا پوچ → فلوی پیش‌فرض (به‌جای ۵۰۰)"""
+    """Broken or empty flow_config → fall back to the default flow (instead of a 500)"""
     try:
         flow = json.loads(raw or "{}")
     except (json.JSONDecodeError, TypeError):
@@ -141,7 +141,7 @@ def save_flow_config(tenant_id: int, flow: dict):
 
 
 def seed_initial_data():
-    """ساخت tenant نمونه + سوپر ادمین + ادمین نمونه (در صورت نبود)"""
+    """Create the Demo tenant + super admin + Demo admin (if missing)"""
     conn = get_conn(USER_RECORDS_DB)
     cur = conn.cursor()
     cur.execute("""
@@ -178,7 +178,7 @@ def seed_initial_data():
     """)
     conn.commit()
 
-    # tenant نمونه
+    # Demo tenant
     row = cur.execute("SELECT id FROM tenants WHERE slug='demo'").fetchone()
     if not row:
         cur.execute(
@@ -189,7 +189,7 @@ def seed_initial_data():
     else:
         demo_id = row[0]
 
-    # سوپر ادمین
+    # Super admin
     if not cur.execute("SELECT 1 FROM panel_users WHERE role='super_admin'").fetchone():
         if SUPER_ADMIN_PASSWORD:
             cur.execute(
@@ -202,7 +202,7 @@ def seed_initial_data():
                 "SUPER_ADMIN_PASSWORD تنظیم نشده — سوپر ادمین ساخته نشد. برای ورود، متغیر را در .env تنظیم کنید."
             )
 
-    # ادمین نمونه
+    # Demo admin
     if not cur.execute("SELECT 1 FROM panel_users WHERE username='demo'").fetchone():
         if ADMIN_PANEL_PASSWORD:
             cur.execute(
