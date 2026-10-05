@@ -88,9 +88,10 @@ def init_all_dbs():
     internal_ai_engine.init_learning_db()
     crawler.init_db()
     tenants_mod.seed_initial_data()
+    # اول جداول سشن ساخته می‌شوند، چون _migrate_tenant_columns روی همان جداول ایندکس می‌سازد
+    init_widget_sessions_db()
     _migrate_tenant_columns()
     _seed_consultants_from_json(user_db)
-    init_widget_sessions_db()
 
 
 def _seed_consultants_from_json(user_db):
