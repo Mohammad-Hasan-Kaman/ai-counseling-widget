@@ -7,3 +7,8 @@ data/consultants_*.xlsx
 __pycache__/
 *.pyc
 .pytest_cache/
+.claude/
+.venv/
+venv/
+*.log
+.DS_Store

@@ -1,6 +1,6 @@
 (function () {
   "use strict";
-  // لودر ویجت چت نیک‌روان — یک خط embed:
+  // Nikravan chat widget loader — one-line embed:
   // <script src="https://WIDGET_HOST/static/widget.js" data-origin="https://WIDGET_HOST" async></script>
 
   var script = document.currentScript || (function () {
@@ -22,7 +22,7 @@
     "#nikravan-widget-frame{position:fixed;bottom:92px;left:20px;width:380px;height:580px;max-height:calc(100vh - 120px);border:none;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.22);z-index:2147483001;display:none;background:#fff;overflow:hidden;}",
     "#nikravan-widget-frame.open{display:block;}",
     "@media (max-width:480px){",
-    /* dvh: ارتفاع دیده‌شده واقعی — وقتی کیبورد باز می‌شود قاب ویجت جمع می‌شود و ورودی/گزینه‌ها روی کیبورد می‌مانند */
+    /* dvh: real visible height — when the keyboard opens the widget frame shrinks and the input/options stay above the keyboard */
     "  #nikravan-widget-frame.open{position:fixed;inset:0;width:100vw;height:100dvh;max-height:none;border-radius:0;bottom:0;left:0;}",
     "  #nikravan-widget-root.open{display:none;}",
     "}"
@@ -59,7 +59,7 @@
     frame.classList.toggle("open", open);
     root.classList.toggle("open", open);
     if (!open) {
-      // اجازه بده صفحهٔ میزبان بعد از بستن ویجت به جای طبیعی‌اش برگردد
+      // let the host page return to its natural position after the widget closes
       try { window.scrollTo(0, 0); } catch (e) {}
       try { window.parent.scrollTo(0, 0); } catch (e) {}
     }
@@ -72,10 +72,10 @@
     if (e.origin !== origin) return;
     if (e.data === "nikravan-widget-close") toggle(false);
     if (e.data === "nikravan-widget-ensure-visible") {
-      // کیبورد موبایل کل صفحه را zoom/scroll کرده — قاب را برگردان داخل ناحیه دیده‌شده
+      // the mobile keyboard has zoomed/scrolled the whole page — bring the frame back inside the visible area
       try {
         if (window.innerWidth <= 480) {
-          // حالت تمام‌صفحه: صبر کن مرورگر layout را با dvh جدید کامل کند بعد صفحه را صفر کن
+          // fullscreen mode: wait for the browser to finish laying out with the new dvh, then scroll the page to the top
           setTimeout(function () { window.scrollTo(0, 0); }, 120);
         }
         window.scrollTo(0, 0);

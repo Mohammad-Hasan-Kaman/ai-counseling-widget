@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""احراز هویت پنل: hash رمز (pbkdf2)، سشن کوکی امضاشده، کنترل نقش"""
+"""Panel authentication: password hashing (pbkdf2), signed cookie session, role checks"""
 import hashlib
 import hmac
 import secrets
@@ -37,7 +37,7 @@ def verify_password(password: str, stored: str) -> bool:
 
 
 def authenticate(username: str, password: str) -> dict | None:
-    """خروجی: {id, username, role, tenant_id} یا None"""
+    """Returns {id, username, role, tenant_id} or None"""
     conn = get_conn(USER_RECORDS_DB)
     row = conn.execute(
         "SELECT id, username, password_hash, role, tenant_id, active FROM panel_users WHERE username=?",

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-استخراج پروفایل مشاوران از فایل اکسل مرکز.
-ساختار واقعی فایل: بلوکی — هر مشاور چند سطر دارد؛ سطر اول نام، و سطرهای
-ادامه (تا نام بعدی) بقیه اطلاعات اوست. پس داده‌ها باید در سطح بلوک جمع شوند.
+Extract consultant profiles from the center's Excel file. Actual file structure: block-based —
+each consultant spans several rows: the first row holds the name, and the following rows (up to
+the next name) hold the rest of their data, so values must be aggregated at the block level.
 """
 import json
 import math
@@ -15,19 +15,19 @@ from app.config import PROFILES_JSON
 EXCEL_FILE = PROFILES_JSON.parent / "consultants_upload.xlsx"
 JSON_OUTPUT = str(PROFILES_JSON)
 
-HEADER_ROW = 1          # ردیف سرستون‌های جزئی (شاخص صفرمبنا)
-DATA_START = 2          # داده از این ردیف شروع می‌شود
-NAME_COL = 2            # ستون نام مشاور (C)
-ABILITY_COL = 1         # ستون ضریب توانمندی (B)
-LOCATION_COL = 3        # ستون محل کار (D)
-EDU_COL = 4             # ستون تحصیلات و سوابق (E)
-GENERAL_COLS = range(5, 18)    # حوزه‌های عمومی (F تا R)
-DETAIL_COLS = range(19, 31)    # موضوعات جزئی (T تا AF)
-GENERAL2_COL = 18       # حوزه کلی (S)
-FREE31_COL = 31         # موضوعات آزاد (AF)
-AGE_COL = 32            # محدوده سنی (AG)
-LICENSE_COL = 33        # پروانه (AH)
-NOTES_COL = 34          # ملاحظات (AI)
+HEADER_ROW = 1          # header row of the detail columns (zero-based index)
+DATA_START = 2          # data starts from this row
+NAME_COL = 2            # consultant name column (C)
+ABILITY_COL = 1         # ability coefficient column (B)
+LOCATION_COL = 3        # work location column (D)
+EDU_COL = 4             # education and experience column (E)
+GENERAL_COLS = range(5, 18)    # general areas (F to R)
+DETAIL_COLS = range(19, 31)    # detail topics (T to AF)
+GENERAL2_COL = 18       # overall area (S)
+FREE31_COL = 31         # free-form topics (AF)
+AGE_COL = 32            # age range (AG)
+LICENSE_COL = 33        # license (AH)
+NOTES_COL = 34          # notes (AI)
 
 ABILITY_VALUES = (1.0, 2.0, 3.0)
 
@@ -51,7 +51,7 @@ def _num(v):
 
 
 def normalize_location(raw: str) -> str:
-    """یکدست‌سازی مقادیر محل کار به سه حالت مجاز: ظفر / خیابان ایران / هر دو"""
+    """Normalize work-location values into the three allowed forms: Zafar / Iran Street / Both"""
     t = (raw or "").replace("ي", "ی").replace("ك", "ک")
     if " مجازی" in t or "آنلاین" in t:
         return "هر دو"
@@ -74,20 +74,20 @@ def convert_excel_to_json(excel_path, json_output=JSON_OUTPUT):
         print("فایل اکسل خالی است.")
         return 0
 
-    # سرستون‌ها از ردیف HEADER_ROW (با fallback به ردیف اول)
+    # headers come from row HEADER_ROW (fall back to the first row)
     headers = {}
     for c in list(GENERAL_COLS) + list(DETAIL_COLS):
         h = _txt(df.iloc[HEADER_ROW, c]) or _txt(df.iloc[0, c])
         headers[c] = h or ("ستون %d" % (c + 1))
 
-    # بلوک‌ها: هر سطر دارای نام تا نام بعدی
+    # blocks: rows that carry a name, up to the next name row
     name_rows = [i for i in range(DATA_START, len(df)) if _txt(df.iloc[i, NAME_COL])]
 
     output_data = []
     for bi, r in enumerate(name_rows):
         end = name_rows[bi + 1] if bi + 1 < len(name_rows) else len(df)
 
-        # ضریب توانمندی: همان سطر، وگرنه اولین عدد معتبر همان بلوک
+        # ability coefficient: same row, otherwise the first valid number in the block
         ability = _num(df.iloc[r, ABILITY_COL])
         if ability not in ABILITY_VALUES:
             ability = None

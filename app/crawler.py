@@ -10,18 +10,18 @@ from app.config import APPOINTMENTS_DB, MAPPING_JSON, CRAWLER_DELAY_SECONDS, CRA
 log = logging.getLogger(__name__)
 TEAM_URL = "https://nikravan.org/team/"
 
-# پروکسی سیستم (مثلاً کلاینت VPN روی 10808) گاهی ناپایدار است.
-# استراتژی: اول از طریق پروکسی سیستم، در صورت خطا اتصال مستقیم (بدون پروکسی)
-DIRECT_PROXIES = {"http": None, "https": None}   # bypass پروکسی سیستم
-FETCH_RETRIES = 2          # هر URL حداکثر ۲ بار تلاش می‌شود
-RETRY_BACKOFF = 3          # ثانیه انتظار بین تلاش‌ها
+# The system proxy (e.g. a VPN client on port 10808) is sometimes unstable.
+# Strategy: go through the system proxy first, fall back to a direct connection (no proxy) on error
+DIRECT_PROXIES = {"http": None, "https": None}   # bypass the system proxy
+FETCH_RETRIES = 2          # each URL is retried at most 2 times
+RETRY_BACKOFF = 3          # seconds to wait between attempts
 
 
 def fetch_page(url: str) -> str:
     """
-    دریافت صفحه سایت با مقاوم‌سازی:
-    تلاش ۱: مسیر پیش‌فرض (پروکسی سیستم اگر فعال باشد)
-    تلاش ۲: پس از backoff، اتصال مستقیم بدون پروکسی
+    Fetch a page with resilience:
+    Attempt 1: default route (system proxy if enabled)
+    Attempt 2: after the backoff, a direct connection without a proxy
     """
     last_err = None
     for attempt in range(FETCH_RETRIES):
@@ -68,7 +68,7 @@ def init_db():
 
 
 def record_crawl_run(total: int, done: int, free_slots: int, ok: bool, error: str | None = None) -> None:
-    """ثبت نتیجه هر دوره کراول (خودکار یا دستی) برای پایش سلامت در داشبورد"""
+    """Record the result of every crawl run (automatic or manual) for health monitoring on the dashboard"""
     _db(
         "INSERT INTO crawl_runs (finished_at, total, done, free_slots, ok, error)"
         " VALUES (CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)",
@@ -77,7 +77,7 @@ def record_crawl_run(total: int, done: int, free_slots: int, ok: bool, error: st
 
 
 def get_last_crawl_info() -> dict | None:
-    """آخرین دوره کراول ثبت‌شده: {finished_at, total, done, free_slots, ok, error} یا None"""
+    """Last recorded crawl run: {finished_at, total, done, free_slots, ok, error} or None"""
     rows = _db(
         "SELECT finished_at, total, done, free_slots, ok, error FROM crawl_runs"
         " ORDER BY id DESC LIMIT 1",
@@ -117,7 +117,7 @@ def scrape_team_list() -> int:
 
 
 def crawl_available_slots(progress_cb=None):
-    """progress_cb(done, total, current_name, free_total) — برای نمایش زنده در پنل"""
+    """progress_cb(done, total, current_name, free_total) — for live display in the panel"""
     scrape_team_list()
     init_db()
     try:
@@ -132,7 +132,7 @@ def crawl_available_slots(progress_cb=None):
     log.info("🔍 در حال استخراج نوبت‌های %d مشاور...", total)
 
     consecutive_errors = 0
-    MAX_CONSECUTIVE_ERRORS = 5   # اگر شبکه کاملاً قطع باشد، بعد از ۵ خطا کل کراول متوقف می‌شود
+    MAX_CONSECUTIVE_ERRORS = 5   # if the network is completely down, the whole crawl stops after 5 consecutive errors
     done = 0
     free_total = 0
     stopped_early = False
@@ -152,7 +152,7 @@ def crawl_available_slots(progress_cb=None):
         try:
             html = fetch_page(url)
         except Exception as e:
-            # خطای شبکه/پروکسی: داده قبلی این مشاور دست‌نخورده می‌ماند
+            # network/proxy error: this counselor's previous data is left untouched
             consecutive_errors += 1
             last_error = str(e)[:200]
             log.error("❌ خطای اتصال هنگام کراول %s: %s", name, e)
@@ -171,8 +171,8 @@ def crawl_available_slots(progress_cb=None):
         try:
             soup = BeautifulSoup(html, "html.parser")
 
-            # اولویت ۱: جدول نوبت‌ها — عبارات «لیست انتظار»/«تماس تلفنی» ممکن است در
-            # منو یا فوتر هر صفحه هم باشند؛ پس ابتدا باید جدول را بررسی کرد.
+            # Priority 1: the appointments table — the "waiting list"/"phone call" phrases may also appear in
+            # the menu or footer of any page, so the table must be checked first.
             table = soup.find("table", {"id": "report"}) or soup.find("table", class_="table")
             free_slots = []
             if table:
@@ -190,7 +190,7 @@ def crawl_available_slots(progress_cb=None):
                         room_el = cols[1].find("small")
                         room_txt = room_el.get_text(strip=True) if room_el else ""
                         branch = row.get("data-branch", "")
-                        # تشخیص شعبه از متن اتاق اگر data-branch خالی بود
+                        # infer the branch from the room text when data-branch is empty
                         if not branch and room_txt:
                             if "ظفر" in room_txt or "زعفرانیه" in room_txt:
                                 branch = "zafar"
@@ -211,7 +211,7 @@ def crawl_available_slots(progress_cb=None):
                 time.sleep(CRAWLER_DELAY_SECONDS)
                 continue
 
-            # اولویت ۲: پیام‌های وضعیت — فقط وقتی هیچ نوبت آزادی در جدول نیست معتبرند
+            # Priority 2: status messages — only valid when the table has no free slots
             page_text = soup.get_text()
             _db("DELETE FROM appointments WHERE counselor_name=?", (name,))
 
@@ -220,7 +220,7 @@ def crawl_available_slots(progress_cb=None):
             elif "تماس تلفنی" in page_text or "صرفا با تماس" in page_text:
                 _db("INSERT INTO appointments (counselor_name,status) VALUES (?,?)", (name, "phone_only"))
             elif "لیست انتظار" in page_text or table is not None:
-                # صفحه دارای جدول بدون ردیف free = همه پر است؛ صرف وجود کلمه لیست انتظار در منو هم waiting است
+                # a page with a table but no free rows = everything is booked; the word "waiting list" appearing only in the menu also means waiting
                 _db("INSERT INTO appointments (counselor_name,status) VALUES (?,?)", (name, "waiting"))
             else:
                 _db("INSERT INTO appointments (counselor_name,status) VALUES (?,?)", (name, "no_table"))

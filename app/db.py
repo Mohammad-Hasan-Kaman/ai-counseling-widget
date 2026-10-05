@@ -42,7 +42,7 @@ def init_widget_sessions_db():
     """)
     cur.execute("CREATE INDEX IF NOT EXISTS idx_widget_messages_token ON widget_messages(token)")
     cur.execute("CREATE INDEX IF NOT EXISTS idx_widget_messages_tenant ON widget_messages(tenant_id)")
-    # دیتابیس‌های قدیمی: ستون tenant_id را اضافه کن
+    # Legacy databases: add the tenant_id column
     cols = [c[1] for c in cur.execute("PRAGMA table_info(widget_messages)").fetchall()]
     if "tenant_id" not in cols:
         cur.execute("ALTER TABLE widget_messages ADD COLUMN tenant_id INTEGER DEFAULT 1")
@@ -58,7 +58,7 @@ _TENANT_TABLES = [
 
 
 def _migrate_tenant_columns():
-    """ستون tenant_id به همه جداول چت‌بات اضافه می‌شود (پیش‌فرض ۱ = نیک‌روان)"""
+    """Add the tenant_id column to all chatbot tables (default 1 = Nikravan)"""
     conn = get_conn(USER_RECORDS_DB)
     for table in _TENANT_TABLES:
         try:
@@ -88,14 +88,14 @@ def init_all_dbs():
     internal_ai_engine.init_learning_db()
     crawler.init_db()
     tenants_mod.seed_initial_data()
-    # اول جداول سشن ساخته می‌شوند، چون _migrate_tenant_columns روی همان جداول ایندکس می‌سازد
+    # Session tables are created first because _migrate_tenant_columns builds indexes on those same tables
     init_widget_sessions_db()
     _migrate_tenant_columns()
     _seed_consultants_from_json(user_db)
 
 
 def _seed_consultants_from_json(user_db):
-    """جدول consultants هنگام اولین اجرا از JSON پر می‌شود (اگر خالی باشد)"""
+    """Fill the consultants table from JSON on first run (only when it is empty)"""
     import json
     from app.config import PROFILES_JSON
     if not PROFILES_JSON.exists():
@@ -115,7 +115,7 @@ def gc_expired_sessions():
     conn.execute(
         "DELETE FROM widget_sessions WHERE expires_at < datetime('now')"
     )
-    # ترنسکریپت پیام‌های سشن‌های حذف‌شده + پیام‌های قدیمی‌تر از ۳۰ روز
+    # Purge transcripts of deleted sessions + messages older than 30 days
     conn.execute(
         "DELETE FROM widget_messages WHERE token NOT IN (SELECT token FROM widget_sessions)"
     )

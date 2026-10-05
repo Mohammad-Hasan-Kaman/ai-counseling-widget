@@ -25,14 +25,14 @@ CRAWLER_INTERVAL_HOURS = 2
 CRAWLER_DELAY_SECONDS = 1
 CRAWLER_HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
 CRAWLER_ENABLED = os.getenv("CRAWLER_ENABLED", "1") == "1"
-# اگر دیتای نوبت‌ها از این قدیمی‌تر باشد، داشبورد هشدار کهنگی نشان می‌دهد (ثانیه)
+# if appointment data is older than this, the dashboard shows a staleness warning (seconds)
 CRAWL_STALE_AFTER_SECONDS = int(os.getenv("CRAWL_STALE_AFTER_SECONDS", str(6 * 3600)))
 
 ADMIN_SESSION_TTL = 4 * 3600
 WIDGET_SESSION_TTL = 24 * 3600
 MAX_MESSAGE_LENGTH = 2000
 
-# پشت reverse proxy با HTTPS: کوکی پنل فقط روی HTTPS فرستاده می‌شود
+# behind an HTTPS reverse proxy: the panel cookie is only sent over HTTPS
 COOKIE_SECURE = os.getenv("COOKIE_SECURE", "0") == "1"
 
 CORS_ORIGINS = [o.strip() for o in os.getenv("CORS_ORIGINS", "http://localhost:8000").split(",") if o.strip()]

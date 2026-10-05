@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  // کلید API از query iframe
+  // API key from the iframe query string
   var params = new URLSearchParams(window.location.search);
   var apiKey = params.get("key") || "";
   var keySuffix = apiKey ? apiKey.slice(-8) : "anon";
@@ -10,7 +10,7 @@
 
   var token = null;
   var busy = false;
-  var dead = false; // کلید نامعتبر — فرم بسته بماند
+  var dead = false; // invalid key — keep the form closed
 
   var elMessages = document.getElementById("chat-messages");
   var elQuick = document.getElementById("quick-replies");
@@ -34,11 +34,11 @@
   }
 
   function renderBotContent(text, html) {
-    // html سمت سرور escape شده (md_to_html) — اگر آمد همان را رندر کن
+    // HTML is escaped server-side (md_to_html) — if it came, render it as-is
     if (html) {
       var div = document.createElement("div");
       div.innerHTML = html;
-      // لینک‌های رزرو: تب جدید؛ اگر مرورگر بلاک کرد، حداقل کل پنجره (نه داخل فریم ویجت)
+      // booking links: new tab; if the browser blocks it, at least the whole window (not inside the widget frame)
       var links = div.querySelectorAll("a");
       for (var i = 0; i < links.length; i++) {
         links[i].removeAttribute("target");
@@ -54,7 +54,7 @@
     elScroll.scrollTop = elScroll.scrollHeight;
   }
 
-  // سؤال تازه را بالای ناحیه دید بگذار: سؤال + گزینه‌هایش با هم دیده شوند
+  // put the new question at the top of the viewport: the question and its options are seen together
   function scrollQuestionIntoView() {
     var msgs = elMessages.querySelectorAll(".msg.bot:not(.typing)");
     var last = msgs[msgs.length - 1];
@@ -104,7 +104,7 @@
       b.addEventListener("click", function () { send(label); });
       elQuick.appendChild(b);
     });
-    // گزینه‌ها زیر همان سؤال دیده شوند — بدون اسکرول دستی کاربر
+    // options appear right under that same question — no manual scrolling by the user
     setTimeout(scrollQuestionIntoView, 60);
   }
 
@@ -140,7 +140,7 @@
     addMessage("bot", reply.text, reply.html);
     renderChips(reply.quick_replies, reply.input_type);
     setInputMode(reply.input_type);
-    // سؤال تازه را بالای دید بگذار: سؤال + گزینه‌ها/ورودی با هم دیده شوند
+    // put the new question at the top of the viewport: question + options/input are seen together
     setTimeout(scrollQuestionIntoView, 60);
   }
 
@@ -162,7 +162,7 @@
     })
       .then(function (r) {
         if (r.status === 404) {
-          // سشن منقضی شده — سشن جدید بگیر و دوباره تلاش کن
+          // session expired — start a new session and try again
           hideTyping();
           return startSession(true).then(function () {
             busy = false; elSend.disabled = false;
@@ -245,9 +245,9 @@
     send(elInput.value);
   });
 
-  // ── موبایل: جلوگیری از پوشیده شدن ورودی/پیام‌ها توسط کیبورد ──
-  // روی اندروید iframe مقیاس‌پذیر است؛ وقتی کیبورد باز می‌شود کل صفحه والد zoom/scroll می‌شود.
-  // راه مطمئن: اطلاع‌دادن به والد تا فریم را در ناحیه دیده‌شده نگه دارد + ارتفاع اپ با vvh واقعی.
+  // ── mobile: keep the keyboard from covering the input/messages ──
+  // On Android the iframe is resizable; when the keyboard opens, the whole parent page is zoomed/scrolled.
+  // Safe approach: notify the parent so it keeps the frame in the visible area + size the app with the real vvh.
   var vv = window.visualViewport;
   if (vv) {
     var applyVv = function () {
@@ -278,7 +278,7 @@
     setTimeout(scrollToBottom, 450);
   });
   elInput.addEventListener("input", function () {
-    // حین تایپ: فریم ویجت نباید زیر کیبورد برود
+    // while typing: the widget frame must not go under the keyboard
     setTimeout(function () {
       try { window.scrollTo(0, 0); } catch (e) {}
       if (window.parent && window.parent !== window) {

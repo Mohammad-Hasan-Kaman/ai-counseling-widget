@@ -1,24 +1,25 @@
-# راهنمای انتشار روی سرور (Production)
+# Production Deployment Guide
 
-## ۱. پیش‌نیازها
+## 1. Prerequisites
 
-- سرور لینوکس با Docker و Docker Compose
-- دامنه/زیردامنه برای ویجت، مثل `widget.nikravan.org` با گواهی HTTPS (Certbot / Nginx Proxy Manager)
-- فایل `.env` طبق `.env.example` — **حتماً این موارد را عوض کنید:**
-  - `SECRET_KEY`: خروجی `python -c "import secrets; print(secrets.token_hex(32))"`
-  - `SUPER_ADMIN_PASSWORD` و `ADMIN_PANEL_PASSWORD`: رمزهای قوی
-  - `COOKIE_SECURE=1` (چون پشت HTTPS است)
-  - `CORS_ORIGINS`: دقیقاً همان دامنه(ها)یی که ویجت در آن‌ها embed می‌شود
+- A Linux server with Docker and Docker Compose
+- A domain or subdomain for the widget, e.g. `widget.nikravan.org`, with a valid HTTPS
+  certificate (Certbot / Nginx Proxy Manager)
+- A `.env` file based on `.env.example` — **you must change all of these:**
+  - `SECRET_KEY`: generate with `python -c "import secrets; print(secrets.token_hex(32))"`
+  - `SUPER_ADMIN_PASSWORD` and `ADMIN_PANEL_PASSWORD`: long random passwords
+  - `COOKIE_SECURE=1` (the site runs behind HTTPS)
+  - `CORS_ORIGINS`: exactly the domain(s) where the widget will be embedded — never `*`
 
-## ۲. اجرا
+## 2. Run
 
 ```bash
 docker compose up -d --build
-docker compose logs -f widget   # بررسی لاگ
-curl http://127.0.0.1:8000/api/chat/health   # باید {"status":"ok"} بدهد
+docker compose logs -f widget          # check logs
+curl http://127.0.0.1:8000/api/chat/health   # must return {"status":"ok"}
 ```
 
-## ۳. Nginx (reverse proxy)
+## 3. Nginx (reverse proxy)
 
 ```nginx
 server {
@@ -36,24 +37,27 @@ server {
 }
 ```
 
-## ۴. بعد از انتشار
+## 4. After deploying
 
-1. وارد `/admin` شوید (سوپر ادمین) و رمزها را از «تغییر رمز» عوض کنید.
-2. کراول اولیه خودکار اجرا می‌شود؛ وضعیت آن را از داشبورد نیک‌روان (بخش کراول) ببینید.
-3. اکسل مشاوران را از پنل آپلود کنید تا دیتای واقعی جای seed بنشیند.
-4. کد embed سایت مشتری را با `data-origin="https://widget.nikravan.org"` به‌روز کنید.
+1. Sign in to `/admin` as the super admin and change both passwords from **Change password**.
+2. The initial crawl runs automatically; monitor it from the tenant dashboard
+   (Availability crawl section).
+3. Upload the real consultant Excel file from the panel so production data replaces the seed data.
+4. Update the embed snippet on tenant sites with
+   `data-origin="https://widget.nikravan.org"`.
 
-## ۵. نگهداری
+## 5. Maintenance
 
-- بکاپ: پوشه `data/` (هر سه فایل `.db`) را روزانه بکاپ بگیرید.
-- به‌روزرسانی: `git pull && docker compose up -d --build`
-- سشن‌های منقضی هر ساعت خودکار پاک می‌شوند؛ پیام‌های قدیمی‌تر از ۳۰ روز هم پاک می‌شوند.
+- **Backups:** back up the `data/` folder (all three `.db` files) daily.
+- **Updates:** `git pull && docker compose up -d --build`
+- Expired sessions are cleaned automatically every hour, and messages older than
+  30 days are purged.
 
-## ۶. چک‌لیست امنیتی
+## 6. Security checklist
 
-- [ ] `SECRET_KEY` تصادفی و محرمانه
-- [ ] `COOKIE_SECURE=1` با HTTPS
-- [ ] `CORS_ORIGINS` محدود به دامنه‌های واقعی (بدون `*`)
-- [ ] رمزهای قوی (۸+ کاراکتر) برای هر دو نقش
-- [ ] `allowed_domains` هر مشتری در پنل سوپر ادمین تنظیم شده
-- [ ] فایل `.env` در git نیست (در `.gitignore` است)
+- [ ] `SECRET_KEY` is random and secret
+- [ ] `COOKIE_SECURE=1` with HTTPS
+- [ ] `CORS_ORIGINS` limited to real domains (no `*`)
+- [ ] Strong passwords (8+ characters) for both roles
+- [ ] `allowed_domains` configured for each tenant in the super-admin panel
+- [ ] `.env` is not tracked by git (it is in `.gitignore`)

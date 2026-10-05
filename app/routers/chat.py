@@ -14,7 +14,7 @@ from app.config import USER_RECORDS_DB, MAX_MESSAGE_LENGTH
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
 
-# ── Rate limit: 30 درخواست در دقیقه به‌ازای IP ──
+# ── Rate limit: 30 requests per minute per IP ──
 _RATE_LIMIT = 30
 _RATE_WINDOW = 60
 _RATE_MAX_KEYS = 10000
@@ -56,7 +56,7 @@ class MessageReq(BaseModel):
 
 
 def _host_allowed(host: str, domains: list[str]) -> bool:
-    """تطابق دقیق هاست یا ساب‌دامین آن (نه زیررشته‌ای)"""
+    """Exact match on the host or one of its subdomains (not a plain substring match)"""
     host = host.strip().lower().rstrip(".")
     for d in domains:
         d = d.strip().lower().rstrip(".")
@@ -71,7 +71,7 @@ def _resolve_tenant(api_key: str, request: Request) -> dict:
     tenant = tenants_mod.get_tenant_by_key(api_key or "")
     if not tenant:
         raise HTTPException(status_code=401, detail="کلید API نامعتبر است.")
-    # محدودیت دامنه (اختیاری)
+    # domain restriction (optional)
     domains = [d.strip().lower() for d in tenant["allowed_domains"].split(",") if d.strip()]
     if domains:
         origin = request.headers.get("origin") or request.headers.get("referer") or ""
@@ -114,7 +114,7 @@ async def create_or_restore_session(req: SessionReq, request: Request):
                 "announcement": announcement,
             }
 
-    # سشن جدید
+    # new session
     welcome = tenant["flow_config"].get("welcome") or "سلام! خوش آمدید."
     token = ss.create_session(tenant["id"])
     ss.log_message(token, "bot", ss.md_to_text(welcome))

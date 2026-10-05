@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-ماشین حالت گفتگوی پذیرش ویجت وب — موتور فلوی عمومی per-tenant
-فلوی هر مشتری از tenants.flow_config خوانده می‌شود؛ فلوی نیک‌روان عین ربات بله است.
+Web widget intake conversation state machine — generic per-tenant flow engine
+Each tenant's flow is read from tenants.flow_config; the Nikravan flow is identical to the Bale bot.
 """
 import json
 import re
@@ -32,9 +32,9 @@ GHQ_INTRO = (
 
 
 class TenantDisabled(Exception):
-    """سشن متعلق به مشتری غیرفعال/حذف‌شده است — لایه وب باید 403 بدهد."""
+    """The session belongs to a disabled/deleted tenant — the web layer must return 403."""
 
-# کلیدهای استاندارد user_requests — بقیه در custom_data ذخیره می‌شوند
+# Standard user_requests keys — everything else is stored in custom_data
 _SOURCE_KEYS = {"full_name", "phone", "gender", "age", "topic", "has_prev_therapy",
                 "prev_detail", "expectation", "preferred_gender", "branch"}
 
@@ -43,7 +43,7 @@ _CHOICE_LABELS = {
 }
 
 
-# ── تبدیل Markdown تلگرام به متن/HTML وب ──
+# ── Telegram Markdown → web text/HTML conversion ──
 
 def md_to_text(s: str) -> str:
     s = s.replace("**", "")
@@ -57,11 +57,11 @@ def md_to_html(s: str) -> str:
 
     def _link(m: re.Match) -> str:
         label, url = m.group(1), m.group(2).strip()
-        # فقط http/https مجاز — جلوگیری از javascript: و schemeهای خطرناک
+        # Only http/https allowed — blocks javascript: and other dangerous schemes
         if not re.match(r"https?://", url, re.IGNORECASE):
             return label
-        # _top: داخل iframe ویجت، کل پنجره را می‌گیرد (تب جدید اگر مرورگر اجازه دهد،
-        # وگرنه حداقل فریم والد را جایگزین می‌کند و صفحه سایت زیر ویجت دیده می‌شود)
+        # _top: inside the widget iframe it takes the whole window (new tab if the browser allows,
+        # otherwise it at least replaces the parent frame so the site page shows under the widget)
         return f'<a href="{html_mod.escape(url, quote=True)}" target="_top" rel="noopener">{label}</a>'
 
     escaped = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", _link, escaped)
@@ -74,7 +74,7 @@ _profile_url_cache_mtime: float = 0.0
 
 
 def _profile_url(name: str) -> str:
-    """لینک صفحه رزرو مشاور از mapping کراولر (با تطابق فازی نام و کش)."""
+    """Counselor booking page link from the crawler mapping (fuzzy name matching + caching)."""
     global _profile_url_cache, _profile_url_cache_mtime
     try:
         mtime = MAPPING_JSON.stat().st_mtime if MAPPING_JSON.exists() else 0.0
@@ -103,7 +103,7 @@ def _profile_url(name: str) -> str:
     return "https://nikravan.org/team/"
 
 
-# ── تشخیص گزینه GHQ (عیناً از main.py:120-131) ──
+# ── GHQ option detection (verbatim from main.py:120-131) ──
 
 def _parse_ghq_choice(text: str, opts: list) -> int | None:
     clean_text = text.strip().translate(PERSIAN_DIGITS)
@@ -119,7 +119,7 @@ def _parse_ghq_choice(text: str, opts: list) -> int | None:
     return None
 
 
-# ── ساختار پاسخ ربات ──
+# ── Bot reply structure ──
 
 class BotReply:
     def __init__(self, text: str, quick_replies: list[str] | None = None,
@@ -148,7 +148,7 @@ def _ghq_question_text(idx: int) -> str:
     )
 
 
-# ── سشن ──
+# ── Session ──
 
 def _expires() -> str:
     return (datetime.utcnow() + timedelta(seconds=WIDGET_SESSION_TTL)).strftime("%Y-%m-%d %H:%M:%S")
@@ -196,7 +196,7 @@ def log_message(token: str, role: str, text: str):
             (token, role, text, token),
         )
     except Exception:
-        # دیتابیس قدیمی بدون ستون tenant_id
+        # Old database without the tenant_id column
         conn.execute(
             "INSERT INTO widget_messages (token, role, text) VALUES (?, ?, ?)",
             (token, role, text),
@@ -205,7 +205,7 @@ def log_message(token: str, role: str, text: str):
     conn.close()
 
 
-# ── کمک‌های فلوی عمومی ──
+# ── Generic flow helpers ──
 
 _STEP_DEFAULT_LABELS = {
     "full_name": "لطفاً نام و نام خانوادگی خود را وارد فرمایید:",
@@ -222,7 +222,7 @@ _STEP_DEFAULT_LABELS = {
 
 
 def _step_prompt(flow: dict, step_idx: int) -> BotReply:
-    """پرسش مرحله step_idx از فلوی مشتری"""
+    """Prompt for step step_idx of the tenant's flow"""
     step = flow["steps"][step_idx]
     label = step.get("label") or _STEP_DEFAULT_LABELS.get(step["key"], f"لطفاً {step['key']} را وارد کنید:")
     stype = step["type"]
@@ -235,28 +235,28 @@ _LEGACY_COND_ALIASES = {"prev_therapy": "has_prev_therapy", "has_prev_therapy": 
 
 
 def _conditional_satisfied(data: dict, cond: str | None) -> bool:
-    """مرحله شرطی (مثل prev_detail فقط اگر prev_therapy=بله) رد شود یا نه"""
+    """Whether a conditional step (e.g. prev_detail only when prev_therapy is yes) should be skipped"""
     if not cond:
         return True
     key, _, val = cond.partition("=")
     key, val = key.strip(), val.strip()
     actual = data.get(key)
-    # سازگاری شرط‌های قدیمی (نام کلید عوض شده)
+    # Backward compatibility for legacy conditions (the key name was renamed)
     if actual is None and key in _LEGACY_COND_ALIASES:
         actual = data.get(_LEGACY_COND_ALIASES[key])
-    # مقدار ذخیره‌شده ممکن است بولین باشد (بله/خیر → True/False)
+    # The stored value may be a boolean (yes/no → True/False)
     if isinstance(actual, bool):
         actual = "بله" if actual else "خیر"
     return str(actual) == val
 
 
 def _advance_state(session: dict, flow: dict, current: int):
-    """به مرحله بعدی غیرشرطی می‌رود؛ خروجی: شماره مرحله بعدی یا 'ask_ghq' یا 'ghq' یا 'end'"""
+    """Advance to the next non-conditional step; returns: next step number, or 'ask_ghq', 'ghq' or 'end'"""
     steps = flow["steps"]
     idx = current + 1
     while idx < len(steps):
         step = steps[idx]
-        # رد کردن مراحل شرطی که شرطشان برقرار نیست
+        # Skip conditional steps whose condition is not met
         if not _conditional_satisfied(session["data"], step.get("conditional")):
             idx += 1
             continue
@@ -273,14 +273,14 @@ def _restart(session: dict, flow: dict) -> BotReply:
     return BotReply(welcome)
 
 
-# ── پردازش پاسخ هر مرحله ──
+# ── Processing each step's reply ──
 
 def _handle_step(session: dict, flow: dict, text: str) -> BotReply:
     data = session["data"]
     step = flow["steps"][session["state"]]
     stype = step["type"]
 
-    # گزینه‌های مراحل انتخابی باید همیشه موجود باشند
+    # Choice steps must always have options
     if stype == "choice" and not step.get("options"):
         step["options"] = ["بله", "خیر"]
 
@@ -298,7 +298,7 @@ def _handle_step(session: dict, flow: dict, text: str) -> BotReply:
             log_message(session["token"], "bot", md_to_text(_invalid.text))
             return _invalid
         full_name = data.get("full_name", "")
-        # هیچ‌کس بلاک نمی‌شود؛ تعارض‌ها در پنل ادمین بررسی می‌شوند
+        # Nobody is blocked; conflicts are reviewed in the admin panel
         is_valid, req_count, _ = validate_phone_and_get_count(phone, full_name, session["tenant_id"])
         data["phone"] = phone
         data["request_count"] = req_count
@@ -317,9 +317,9 @@ def _handle_step(session: dict, flow: dict, text: str) -> BotReply:
             return BotReply("لطفاً یکی از گزینه‌های زیر را انتخاب کنید:", quick_replies=opts, input_type="chips")
         value = text
 
-    # ذخیره مقدار: کلید استاندارد یا custom
+    # Store the value: standard key or custom
     key = step["key"]
-    # نگاشت شرطی قدیمی (has_prev_therapy=بله) روی کلید فعلی prev_therapy
+    # Legacy conditional mapping (has_prev_therapy=yes) onto the current prev_therapy key
     cond = step.get("conditional") or ""
     if cond.partition("=")[0].strip() == "has_prev_therapy" and data.get("prev_therapy") in ("بله", "خیر"):
         data["has_prev_therapy"] = "بله" if data["prev_therapy"] == "بله" else "خیر"
@@ -344,14 +344,14 @@ def _handle_step(session: dict, flow: dict, text: str) -> BotReply:
     if nxt == "end":
         return _finish(session, flow)
     if nxt == "ask_ghq":
-        # سؤال قبولی GHQ — عین ربات (اختیاری بودن آزمون)
-        _save_session(session["token"], -3, data)  # -3 = پرسش قبولی GHQ
+        # GHQ opt-in question — same as the bot (the test is optional)
+        _save_session(session["token"], -3, data)  # -3 = GHQ opt-in question
         log_message(session["token"], "bot", md_to_text(GHQ_INTRO))
         return BotReply(GHQ_INTRO, quick_replies=YES_NO_QR, input_type="chips")
     if nxt == "ghq":
         data["ghq_answers"] = []
         data["ghq_index"] = 0
-        _save_session(session["token"], -1, data)  # -1 = GHQ جاری
+        _save_session(session["token"], -1, data)  # -1 = GHQ in progress
         qtext = _ghq_question_text(0)
         log_message(session["token"], "bot", md_to_text(qtext))
         return BotReply(qtext, quick_replies=_ghq_quick_replies(0), input_type="chips+text")
@@ -360,14 +360,14 @@ def _handle_step(session: dict, flow: dict, text: str) -> BotReply:
     prompt = _step_prompt(flow, nxt)
     log_message(session["token"], "bot", prompt.text)
 
-    # پیام خوش‌آمد مراجع مکرر — فقط بعد از ثبت شماره
+    # Returning-client welcome message — only after the phone number is recorded
     if stype == "phone" and data.get("request_count", 0) > 1:
         full_name = data.get("full_name", "")
         tenant_name = flow.get("_tenant_name") or "مرکز"
         welcome = f"🌹 خوش‌آمدید {full_name} عزیز! این **بار {data['request_count']}‌ام** است که در {tenant_name} در خدمت شما هستیم.\n\n"
         return BotReply(welcome + prompt.text, quick_replies=prompt.quick_replies, input_type=prompt.input_type)
 
-    # هشدار ملایم شمارهٔ ساختگی (یک‌بار، بدون بلاک)
+    # Gentle warning for a fake-looking number (once, no blocking)
     if stype == "phone" and data.get("phone_suspicious"):
         data["phone_suspicious"] = False
         notice = "📝 شماره ثبت شد؛ لطفاً مطمئن شوید شماره‌ای است که کارشناسان مرکز بتوانند با شما تماس بگیرند.\n\n"
@@ -403,7 +403,7 @@ def _handle_ghq(session: dict, flow: dict, text: str) -> BotReply:
     return BotReply(qtext, quick_replies=_ghq_quick_replies(data["ghq_index"]), input_type="chips+text")
 
 
-# ── پایان فلو ──
+# ── End of flow ──
 
 def _finish(session: dict, flow: dict, ghq_prepend: str | None = None) -> BotReply:
     data = session["data"]
@@ -449,7 +449,7 @@ def _recommend(session: dict, flow: dict) -> BotReply:
 
     recs = engine.match(user_info, tenant_id)
 
-    # ثبت lead حتی وقتی هیچ مشاوری پیدا نشد — درخواست کاربر نباید گم شود
+    # Record the lead even when no counselor is found — the user's request must not be lost
     req_number = save_user_consultation(
         session["token"], user_info, recs, tenant_id, data.get("_custom")
     )
@@ -491,7 +491,7 @@ def _lead_capture(session: dict, flow: dict) -> BotReply:
     return BotReply(flow.get("thanks_text", "متشکریم! اطلاعات شما ثبت شد."))
 
 
-# ── بازیابی سشن (رفرش صفحه) ──
+# ── Session recovery (page refresh) ──
 
 def _state_prompt(session: dict) -> BotReply:
     conn = get_conn(USER_RECORDS_DB)
@@ -508,10 +508,10 @@ def _state_prompt(session: dict) -> BotReply:
             idx = data["ghq_index"]
             if idx < len(GHQ_QUESTIONS):
                 return BotReply(_ghq_question_text(idx), quick_replies=_ghq_quick_replies(idx), input_type="chips+text")
-            # همه پاسخ‌ها داده شده ولی finish ذخیره نشده (سشن قدیمی) — همان خلاصه را برگردان
+            # All answers were given but finish was never saved (old session) — return the same summary
             scores = calculate_ghq_scores(data["ghq_answers"])
             return BotReply(get_ghq_message(scores), quick_replies=RESTART_QR, input_type="chips", done=True)
-        # GHQ شروع نشده — به مرحله جاری برگرد
+        # GHQ not started yet — return to the current stage
         return _restart(session, flow)
     if state == -2:
         return BotReply(
@@ -525,7 +525,7 @@ def _state_prompt(session: dict) -> BotReply:
     return BotReply(flow.get("welcome") or "سلام! خوش آمدید.")
 
 
-# ── نقطه ورود اصلی ──
+# ── Main entry point ──
 
 def handle_message(token: str, text: str) -> BotReply:
     session = get_session(token)
@@ -534,7 +534,7 @@ def handle_message(token: str, text: str) -> BotReply:
 
     text = (text or "").strip()
 
-    # فلوی مشتری (سشن مشتری غیرفعال/حذف‌شده → خطای مخصوص)
+    # Tenant flow (session of a disabled/deleted tenant → dedicated error)
     conn = get_conn(USER_RECORDS_DB)
     row = conn.execute("SELECT flow_config, name, slug FROM tenants WHERE id=? AND active=1", (session["tenant_id"],)).fetchone()
     conn.close()
@@ -558,11 +558,11 @@ def handle_message(token: str, text: str) -> BotReply:
         return _restart(session, flow)
 
     state = session["state"]
-    # ربات: بعد از پایان، هر متنی = شروع مجدد (رفع باگ — عین main.py fallback)
+    # Bot: after the end, any text = restart (bug fix — same as main.py fallback)
     if state == -2:
         return _restart(session, flow)
     if state == -3:
-        # پرسش قبولی GHQ — بله/خیر
+        # GHQ opt-in question — yes/no
         if text not in ("بله", "خیر"):
             return BotReply(
                 "لطفاً یکی از گزینه‌های «بله» یا «خیر» را انتخاب کنید:",

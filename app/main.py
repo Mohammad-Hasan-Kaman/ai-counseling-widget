@@ -40,7 +40,7 @@ async def lifespan(app: FastAPI):
     sched = AsyncIOScheduler()
     if CRAWLER_ENABLED:
         sched.add_job(_crawl_job, "interval", hours=CRAWLER_INTERVAL_HOURS, id="crawl")
-        _initial_crawl = asyncio.create_task(_crawl_job())  # کراول اولیه (معادل post_init)
+        _initial_crawl = asyncio.create_task(_crawl_job())  # initial crawl (equivalent to post_init)
         app.state.initial_crawl = _initial_crawl
     sched.add_job(_gc_job, "interval", minutes=60, id="gc_sessions")
     sched.start()
@@ -57,7 +57,7 @@ app = FastAPI(title="Nikravan AI Chat Widget", lifespan=lifespan)
 async def security_headers(request, call_next):
     resp = await call_next(request)
     resp.headers["X-Content-Type-Options"] = "nosniff"
-    # /widget باید در iframe سایت‌های مشتری باز شود
+    # /widget must be openable inside an iframe on client sites
     if request.url.path != "/widget":
         resp.headers["X-Frame-Options"] = "SAMEORIGIN"
     resp.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
@@ -75,7 +75,7 @@ app.add_middleware(
 app.include_router(chat.router)
 app.include_router(admin.router)
 
-# استاتیک با کش کوتاه — تغییرات ویجت سریع به سایت‌های مشتری می‌رسد
+# static files with short caching — widget changes reach client sites quickly
 class NoCacheStatic(StaticFiles):
     def file_response(self, *args, **kwargs):
         resp = super().file_response(*args, **kwargs)
@@ -89,7 +89,7 @@ app.mount("/static", NoCacheStatic(directory=str(BASE_DIR / "static")), name="st
 @app.get("/widget", response_class=HTMLResponse)
 async def widget_page(key: str = ""):
     from html import escape as _escape
-    # عنوان/نام مرکز از کلید API (چندمشتری — نه هاردکد نیک‌روان)
+    # center title/name comes from the API key (multi-tenant — not hardcoded Nikravan)
     tenant_name = "سامانه پذیرش"
     if key:
         from app import tenants as _tenants
@@ -103,8 +103,8 @@ async def widget_page(key: str = ""):
 
 @app.get("/demo/{demo_key}", response_class=HTMLResponse)
 async def demo_page(demo_key: str):
-    """دموی اختصاصی هر مشتری: لینک از پنل مشتری می‌آید و کلید همان مشتری را دارد.
-    گفتگوها مثل چت واقعی با کلید همان مشتری ثبت می‌شوند."""
+    """Dedicated demo for each client: the link comes from the client panel and carries that client's key.
+    Conversations are recorded like a real chat under that same client's key."""
     from app import tenants as _tenants
     from html import escape as _escape
     t = _tenants.get_tenant_by_key(demo_key)
@@ -123,6 +123,6 @@ async def demo_page(demo_key: str):
 
 @app.get("/", response_class=HTMLResponse)
 async def root():
-    # صفحه خانه (لندینگ)
+    # home (landing) page
     html = (BASE_DIR / "static" / "landing.html").read_text(encoding="utf-8")
     return HTMLResponse(html)

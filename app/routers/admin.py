@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""پنل مدیریت — پنل مشتری (ادمین) + پنل سوپر ادمین"""
+"""Admin panel — tenant panel (admin) + super-admin panel"""
 import json
 import hmac
 import re
@@ -55,7 +55,7 @@ def _tenant_of(user: dict) -> dict:
     return t
 
 
-# ── ورود / خروج ──
+# ── Login / logout ──
 
 @router.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
@@ -64,7 +64,7 @@ async def login_page(request: Request):
     return _render(request, "admin_login.html", {"error": None})
 
 
-# Rate limit ورود: حداکثر ۱۰ تلاش در ۵ دقیقه به‌ازای IP (ضد brute-force)
+# Login rate limit: max 10 attempts per 5 minutes per IP (anti brute-force)
 import time as _time
 _login_hits: dict[str, list[float]] = {}
 _LOGIN_MAX_KEYS = 5000
@@ -118,7 +118,7 @@ async def dashboard(request: Request):
     return await _tenant_dashboard(request, user, flash=None)
 
 
-# ── پنل مشتری (ادمین) ──
+# ── Tenant panel (admin) ──
 
 def _collect_tenant_stats(tenant_id: int) -> dict:
     conn = get_conn(USER_RECORDS_DB)
@@ -135,7 +135,7 @@ def _collect_tenant_stats(tenant_id: int) -> dict:
 
     stats = get_consultants_stats(tenant_id)
 
-    # آمار نوبت‌ها (عین /stats ربات — فقط نیک‌روان) با تفکیک سایت از مشاوران فعال اکسل
+    # Appointment stats (same as the bot's /stats — Nikravan only), with site data broken out separately from active Excel counselors
     appointments = {}
     free_counselors = 0
     total_free_slots = 0
@@ -154,7 +154,7 @@ def _collect_tenant_stats(tenant_id: int) -> dict:
                 "SELECT counselor_name, COUNT(*) FROM appointments WHERE status='free' GROUP BY counselor_name ORDER BY 2 DESC LIMIT 5"
             ).fetchall()
             aconn.close()
-            # چند نفر از مشاوران فعال اکسل نوبت آزاد دارند — تطابق فازی نام (عین ربات)
+            # How many of the active Excel counselors have free slots — fuzzy name matching (same as the bot)
             aconn2 = get_conn(APPOINTMENTS_DB)
             site_free_names = [r[0] for r in aconn2.execute(
                 "SELECT DISTINCT counselor_name FROM appointments WHERE status='free'"
@@ -231,7 +231,7 @@ async def _tenant_dashboard(request: Request, user: dict, flash: str | None):
 
 
 def _current_excel_info(tenant_id: int) -> dict:
-    """اطلاعات فایل اکسل فعال (آخرین آپلود) + ۵ ردیف نمونه"""
+    """Active Excel file info (latest upload) + 5 sample rows"""
     conn = get_conn(USER_RECORDS_DB)
     row = conn.execute(
         "SELECT consultant_count, uploaded_at FROM upload_history WHERE tenant_id=? ORDER BY id DESC LIMIT 1",
@@ -265,7 +265,7 @@ def _get_announcement(tenant_id: int) -> str | None:
     return row[0] if row else None
 
 
-# ── گفتگوها (inbox) ──
+# ── Conversations (inbox) ──
 
 @router.get("/inbox", response_class=HTMLResponse)
 async def inbox(request: Request):
@@ -333,7 +333,7 @@ async def inbox_detail(request: Request, token: str):
     })
 
 
-# ── درخواست‌ها ──
+# ── Requests ──
 
 @router.get("/leads", response_class=HTMLResponse)
 async def leads(request: Request):
@@ -383,7 +383,7 @@ async def export(request: Request):
     )
 
 
-# ── تعارض شماره‌ها (فقط نیک‌روان و همهٔ مشتری‌ها — per-tenant) ──
+# ── Phone-number conflicts (Nikravan and every tenant — per-tenant) ──
 
 @router.get("/conflicts", response_class=HTMLResponse)
 async def conflicts_page(request: Request):
@@ -435,7 +435,7 @@ async def conflicts_resolve(request: Request, phone: str = Form(...),
     return RedirectResponse("/admin/conflicts?ok=1", status_code=303)
 
 
-# ── اطلاعیه ──
+# ── Announcement ──
 
 @router.post("/announcement")
 async def save_announcement(request: Request, text: str = Form(""), active: str = Form("")):
@@ -462,7 +462,7 @@ async def save_announcement(request: Request, text: str = Form(""), active: str 
     return await _tenant_dashboard(request, user, flash=flash)
 
 
-# ── تنظیم فلو ──
+# ── Flow configuration ──
 
 @router.post("/flow")
 async def save_flow(request: Request,
@@ -501,19 +501,19 @@ async def save_flow(request: Request,
                 if not opts:
                     opts = ["بله", "خیر"]
                 step["options"] = opts
-            # حفظ شرط مرحله (مثل prev_detail فقط اگر prev_therapy=بله)
+            # keep the step condition (e.g. prev_detail only when prev_therapy=yes)
             cond = str(s.get("conditional") or "").strip()
             if "=" in cond:
                 cond_key, _, cond_val = cond.partition("=")
                 cond_key = cond_key.strip()
                 cond_val = cond_val.strip()
-                # شرط می‌تواند به key یا source مراحل قبلی اشاره کند (مثل has_prev_therapy به جای prev_therapy)
+                # the condition may refer to the key or source of a previous step (e.g. has_prev_therapy instead of prev_therapy)
                 if cond_key and any(
                     c.get("key") == cond_key or c.get("source") == cond_key for c in clean_steps
                 ):
                     step["conditional"] = cond
                 else:
-                    # شرط قدیمی با نام فیلد استاندارد — نگاشت به کلید مرحله قبل
+                    # legacy condition using the standard field name — map it to the previous step's key
                     _SOURCE_TO_KEY = {"has_prev_therapy": "prev_therapy", "full_name": "full_name",
                                       "phone": "phone", "gender": "gender", "age": "age",
                                       "topic": "topic", "expectation": "expectation",
@@ -535,19 +535,19 @@ async def save_flow(request: Request,
             "thanks_text": thanks_text.strip() or "متشکریم! اطلاعات شما ثبت شد.",
         }
         await run_in_threadpool(tenants_mod.save_flow_config, tenant_id, flow)
-        # کش پروفایل موتور برای این tenant ممکن است تغییر کند
+        # the engine's profile cache for this tenant may have changed
         return await _tenant_dashboard(request, user, flash="✅ فلوی گفتگو ذخیره شد.")
     except (ValueError, json.JSONDecodeError):
         return await _tenant_dashboard(request, user, flash="❌ فرمت مراحل نامعتبر است.")
 
 
-# ── مشاوران ──
+# ── Counselors ──
 
 def _process_upload_sync(xlsx_bytes: bytes, tenant_id: int) -> dict:
     stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     saved = DATA_DIR / f"consultants_{tenant_id}_{stamp}.xlsx"
     saved.write_bytes(xlsx_bytes)
-    # تبدیل به JSON موقت سپس درج در DB (بدون بازنویسی JSON نیک‌روان)
+    # convert to a temporary JSON, then insert into the DB (without overwriting the Nikravan JSON)
     tmp_json = DATA_DIR / f"consultants_{tenant_id}_tmp.json"
     count_json = convert_excel_to_json(str(saved), str(tmp_json))
     if count_json == 0:
@@ -585,7 +585,7 @@ async def upload(request: Request, file: UploadFile = File(...)):
 
     try:
         result = await run_in_threadpool(_process_upload_sync, content, tenant_id)
-        engine.set_tenant(tenant_id, force=True)  # ری‌لود کش پروفایل‌ها از DB
+        engine.set_tenant(tenant_id, force=True)  # reload the profile cache from the DB
         stats = await run_in_threadpool(get_consultants_stats, tenant_id)
         comp = result["compare"]
         added, removed = comp.get("added", []), comp.get("removed", [])
@@ -640,7 +640,7 @@ def _list_consultants(tenant_id: int) -> list:
 
 @router.get("/consultants/download")
 async def download_current_excel(request: Request):
-    """دانلود فایل اکسل‌ی که همین حالا دیتای موتور از آن ساخته شده"""
+    """Download the Excel file the engine data was most recently built from"""
     user = _current_user(request)
     if not user:
         return RedirectResponse("/admin/login", status_code=303)
@@ -663,7 +663,7 @@ async def download_current_excel(request: Request):
         ws.append(["نام", "ضریب توانمندی", "محل کار", "تحصیلات و سوابق", "حوزه عمومی",
                    "حوزه عمومی ۲", "تخصص‌ها (JSON)", "موضوعات جزئی", "محدوده سنی", "پروانه", "ملاحظات"])
         def _safe(v):
-            # جلوگیری از formula injection: سلول متنی که با = + - @ شروع شود
+            # prevent formula injection: text cells starting with = + - @
             if isinstance(v, str) and v[:1] in ("=", "+", "-", "@"):
                 return "'" + v
             return v
@@ -684,7 +684,7 @@ async def download_current_excel(request: Request):
     )
 
 
-# ── بازخورد و یادگیری ──
+# ── Feedback and learning ──
 
 @router.post("/feedback")
 async def feedback(request: Request, counselor_name: str = Form(...), concept_num: str = Form(...), verdict: str = Form(...)):
@@ -716,7 +716,7 @@ async def feedback(request: Request, counselor_name: str = Form(...), concept_nu
     return await _tenant_dashboard(request, user, flash=flash)
 
 
-# ── کراول دستی (فقط نیک‌روان) — پس‌زمینه چون ~۵ دقیقه طول می‌کشد ──
+# ── Manual crawl (Nikravan only) — runs in the background because it takes ~5 minutes ──
 
 import asyncio as _asyncio
 from datetime import datetime as _dt
@@ -753,7 +753,7 @@ def _crawl_background():
 
 @router.get("/crawl/status")
 async def crawl_status(request: Request):
-    """وضعیت زنده کراول دستی برای polling صفحه داشبورد"""
+    """Live status of the manual crawl for dashboard page polling"""
     from fastapi.responses import JSONResponse
     user = _current_user(request)
     if not user:
@@ -788,7 +788,7 @@ async def manual_crawl(request: Request):
         flash="⏳ کراول نوبت‌ها در پس‌زمینه آغاز شد (۸۶ صفحه سایت — حدود ۵ دقیقه). چند دقیقه دیگر رفرش کنید تا آمار جدید را ببینید.")
 
 
-# ── تغییر رمز خود ──
+# ── Change own password ──
 
 @router.get("/password", response_class=HTMLResponse)
 async def password_page(request: Request):
@@ -832,7 +832,7 @@ async def change_password(request: Request,
     return _render(request, "admin_password.html", {"user": user, "error": None, "ok": "رمز عبور با موفقیت تغییر کرد."})
 
 
-# ═══════════ پنل سوپر ادمین ═══════════
+# ══════════ Super-admin panel ══════════
 
 def _tenant_overview() -> list:
     conn = get_conn(USER_RECORDS_DB)

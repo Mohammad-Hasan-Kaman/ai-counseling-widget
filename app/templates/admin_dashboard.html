@@ -255,7 +255,7 @@ document.getElementById('flow-form').addEventListener('submit', function () {
   document.getElementById('steps-json').value = JSON.stringify(steps);
 });
 
-// ── polling زنده وضعیت کراول دستی (فقط نیک‌روان) ──
+// ── live polling of the manual crawl status (Nikravan only) ──
 (function () {
   var panel = document.getElementById('crawl-panel');
   if (!panel) return;

@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-ماژول مدیریت دیتابیس مراجعین و ثبت سوابق مشاوره‌ها — چندمشتری (per-tenant)
-هویت هر نفر = شماره + نام نرمال‌شده؛ شمارهٔ تکراری با نام دیگر دیگر کاربر را
-بلاک نمی‌کند، بلکه پروفایل جدا با وضعیت «در انتظار بررسی» می‌سازد تا ادمین
-در صفحهٔ تعارض‌ها تصمیم بگیرد (ادغام / هر دو واقعی / بایگانی).
-مرکز مشاوره خانواده نیک‌روان
+Client database management and consultation record storage module — multi-tenant (per-tenant)
+Each person's identity = phone + normalized name; a duplicate phone with a different name
+no longer blocks the user but creates a separate profile with "pending review" status so the admin
+can decide on the conflicts page (merge / both are real / archive).
+Nikravan Family Counseling Center
 """
 import sqlite3
 import json
@@ -13,10 +13,10 @@ from pathlib import Path
 from app.config import USER_RECORDS_DB
 from app.db import get_conn
 
-# ── نرمال‌سازی و تطبیق نام ──
+# ── Name normalization and matching ──
 
 def normalize_name(name: str) -> str:
-    """حذف فاصله/نیم‌فاصله/علائم و یکدست‌سازی حروف برای مقایسهٔ نام‌ها"""
+    """Strip spaces/zero-width spaces/punctuation and unify letters for name comparison"""
     s = str(name or "").strip().lower()
     s = s.replace("ي", "ی").replace("ك", "ک").replace("‌", "").replace(" ", "")
     s = re.sub(r"[.\-_]", "", s)
@@ -24,13 +24,13 @@ def normalize_name(name: str) -> str:
 
 
 def names_similar(a: str, b: str) -> bool:
-    """تطبیق فازی نام‌های یک شماره: اختلاف تایپی/فاصله نباید پروفایل دوم بسازد"""
+    """Fuzzy match of names under one phone number: typing/spacing differences must not create a second profile"""
     na, nb = normalize_name(a), normalize_name(b)
     if not na or not nb:
         return False
     if na == nb or na in nb or nb in na:
         return True
-    # فاصلهٔ ویرایشی حداکثر ۲ برای نام‌های بلند (تایپ اشتباه رایج)
+    # Edit distance of at most 2 for long names (common typos)
     if len(na) >= 6 and len(nb) >= 6:
         la, lb = na[:24], nb[:24]
         d = _levenshtein(la, lb)
@@ -51,7 +51,7 @@ def _levenshtein(a: str, b: str) -> int:
 
 
 def is_suspicious_phone(phone: str) -> bool:
-    """شماره‌های واضحاً ساختگی: پیش‌شماره 090 یا ارقام تکراری/دنباله‌دار"""
+    """Obviously fake numbers: 090 prefix or repeating/sequential digits"""
     p = str(phone or "")
     if len(p) != 11 or not p.isdigit():
         return False
@@ -70,7 +70,7 @@ def init_user_db():
     conn = get_conn(USER_RECORDS_DB)
     cur = conn.cursor()
 
-    # جدول مشخصات مراجعین — کلید مرکب (tenant_id, phone, name_norm)
+    # Client details table — composite key (tenant_id, phone, name_norm)
     cur.execute("""
     CREATE TABLE IF NOT EXISTS users (
         tenant_id INTEGER NOT NULL DEFAULT 1,
@@ -86,7 +86,7 @@ def init_user_db():
     )
     """)
 
-    # جدول سوابق درخواست‌ها و نتایج
+    # Request history and results table
     cur.execute("""
     CREATE TABLE IF NOT EXISTS user_requests (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -113,7 +113,7 @@ def init_user_db():
     """)
     conn.commit()
 
-    # مایگریشن جداول قدیمی: افزودن ستون‌های نبود + مهاجرت کلید مرکب
+    # Legacy table migration: add missing columns + migrate the composite key
     existing_cols = [c[1] for c in cur.execute("PRAGMA table_info(user_requests)").fetchall()]
     for col, decl in [("branch", "TEXT"), ("session_token", "TEXT"), ("tenant_id", "INTEGER DEFAULT 1"), ("custom_data", "TEXT")]:
         if col not in existing_cols:
@@ -123,7 +123,7 @@ def init_user_db():
     pk_order = sorted([(c[5], c[1]) for c in cur.execute("PRAGMA table_info(users)").fetchall() if c[5]])
     pk_names = [name for _, name in pk_order]
     if pk_names != ["tenant_id", "phone", "name_norm"]:
-        # ساختار قدیمی (phone یا (tenant_id, phone) تنها PK) → مهاجرت به (tenant_id, phone, name_norm)
+        # Old structure (phone, or (tenant_id, phone) alone as PK) → migrate to (tenant_id, phone, name_norm)
         cur.execute("""
             CREATE TABLE users_new (
                 tenant_id INTEGER NOT NULL DEFAULT 1,
@@ -200,7 +200,7 @@ def init_consultants_db():
         uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     """)
-    # مایگریشن: حذف UNIQUE قدیمی روی name با ساخت مجدد در صورت نیاز
+    # Migration: drop the old UNIQUE index on name, recreating the table if needed
     idx = cur.execute("PRAGMA index_list(consultants)").fetchall()
     has_unique_name = any(
         cur.execute(f"PRAGMA index_info({i[1]})").fetchall() and i[3] == 1 and
@@ -247,8 +247,8 @@ def init_consultants_db():
 
 def replace_consultants(profiles: list, uploaded_by: int = 0, tenant_id: int = 1) -> dict:
     """
-    جایگزینی کامل دیتای مشاورین یک مشتری: داده قدیمی حذف و لیست جدید درج می‌شود.
-    خروجی: آمار مقایسه‌ای با دیتای قبلی برای گزارش
+    Fully replace one tenant's counselor data: old rows are deleted and the new list is inserted.
+    Returns: comparison stats against the previous data for the report
     """
     import json as _json
     init_consultants_db()
@@ -300,7 +300,7 @@ def replace_consultants(profiles: list, uploaded_by: int = 0, tenant_id: int = 1
 
 
 def get_consultants_stats(tenant_id: int = 1) -> dict:
-    """آمار فیلدهای پرشده جدول مشاورین یک مشتری برای گزارش صحت داده"""
+    """Filled-field stats for one tenant's counselor table, for the data-accuracy report"""
     import json as _json
     init_consultants_db()
     conn = get_conn(USER_RECORDS_DB)
@@ -346,8 +346,8 @@ def get_consultants_stats(tenant_id: int = 1) -> dict:
 
 def validate_phone_and_get_count(phone: str, input_name: str, tenant_id: int = 1) -> tuple[bool, int, str]:
     """
-    محاسبه مرتبه مراجعه برای (شماره، نام). هیچ‌کس بلاک نمی‌شود؛
-    خروجی: (مجاز_بودن=True همیشه, شماره_مراجعه, نام_تطبیق‌یافته)
+    Compute the visit ordinal for (phone, name). Nobody is blocked;
+    Returns: (allowed=True always, request_number, matched_name)
     """
     init_user_db()
     conn = get_conn(USER_RECORDS_DB)
@@ -362,17 +362,17 @@ def validate_phone_and_get_count(phone: str, input_name: str, tenant_id: int = 1
         return True, 1, input_name
 
     norm_input = normalize_name(input_name)
-    # تطبیق دقیق نرمال‌شده یا فازی با یکی از پروفایل‌های همین شماره
+    # Exact normalized or fuzzy match against one of this phone number's profiles
     for full_name, name_norm, cnt, status in rows:
         if norm_input == name_norm or names_similar(input_name, full_name):
             return True, (cnt or 0) + 1, full_name
-    # شماره مشترک — پروفایل جدید (در save ساخته می‌شود و به صف تعارض می‌رود)
+    # Shared phone number — new profile (created in save and sent to the conflict queue)
     return True, 1, input_name
 
 
 def save_user_consultation(session_token: str, user_data: dict, recommendations: list,
                            tenant_id: int = 1, custom_data: dict | None = None) -> int:
-    """ثبت سابقه و ارتقای شمارنده مراجعات (ویجت وب — per-tenant)"""
+    """Store the record and increment the visit counter (web widget — per-tenant)"""
     phone = user_data.get("phone", "")
     full_name = (user_data.get("full_name", "") or "—").strip()
     name_norm = normalize_name(full_name)
@@ -401,15 +401,15 @@ def save_user_consultation(session_token: str, user_data: dict, recommendations:
             " WHERE tenant_id=? AND phone=? AND name_norm=?",
             (req_number, tenant_id, phone, r_norm),
         )
-        # اگر پروفایل قبلاً بایگانی شده بود و باز ثبت کرد، دوباره به بررسی برگردد
+        # If the profile was already archived and the user registers again, return it to review
         if r_status == "archived":
             cur.execute(
                 "UPDATE users SET status='pending' WHERE tenant_id=? AND phone=? AND name_norm=?",
                 (tenant_id, phone, r_norm),
             )
-        full_name = r_full  # نام تأییدشدهٔ همان پروفایل
+        full_name = r_full  # the verified name of that same profile
     else:
-        # پروفایل جدید: اگر شماره از قبل نام دیگری دارد → وضعیت pending + قدیمی‌ها هم pending (تعارض)
+        # New profile: if the number already has another name → pending status + old ones also pending (conflict)
         first_profile = not rows
         status = "active" if first_profile else "pending"
         cur.execute("""
@@ -452,10 +452,10 @@ def save_user_consultation(session_token: str, user_data: dict, recommendations:
     return req_number
 
 
-# ── مدیریت تعارض شماره‌ها (صف بررسی ادمین) ──
+# ── Phone-number conflict handling (admin review queue) ──
 
 def list_phone_conflicts(tenant_id: int) -> list:
-    """شماره‌هایی که بیش از یک پروفایل در انتظار بررسی دارند (فقط pending): [{phone, profiles:[...]}]"""
+    """Phone numbers with more than one pending-review profile (pending only): [{phone, profiles:[...]}]"""
     init_user_db()
     conn = get_conn(USER_RECORDS_DB)
     phones = [r[0] for r in conn.execute(
@@ -493,12 +493,12 @@ def list_phone_conflicts(tenant_id: int) -> list:
 def resolve_phone_conflict(tenant_id: int, phone: str, keep_norm: str | None,
                            action: str) -> dict:
     """
-    حل تعارض یک شماره.
+    Resolve conflicts for one phone number.
     action:
-      - "merge": همهٔ پروفایل‌های غیربایگانی در keep_norm ادغام می‌شوند (count جمع، درخواست‌ها به نام نگه‌داشته منتقل)
-      - "both": همه فعال می‌شوند (گوشی مشترک) — از صف خارج
-      - "archive": پروفایل‌های غیر از keep_norm بایگانی می‌شوند
-    خروجی: {"merged_requests": n} یا {"archived": n} یا {"activated": n}
+      - "merge": all non-archived profiles merge into keep_norm (counts summed, requests moved to the kept name)
+      - "both": all are activated (shared phone) — removed from the queue
+      - "archive": profiles other than keep_norm are archived
+    Returns: {"merged_requests": n} or {"archived": n} or {"activated": n}
     """
     init_user_db()
     conn = get_conn(USER_RECORDS_DB)
@@ -527,7 +527,7 @@ def resolve_phone_conflict(tenant_id: int, phone: str, keep_norm: str | None,
                     (tenant_id, phone, o_norm),
                 ).fetchone()
                 total += (cnt_row[0] if cnt_row else 0)
-                # درخواست‌های پروفایل حذفی به نام نگه‌داشته منتقل می‌شوند
+                # The deleted profile's requests are moved to the kept name
                 cur2 = conn.execute(
                     "UPDATE user_requests SET full_name=(SELECT full_name FROM users"
                     " WHERE tenant_id=? AND phone=? AND name_norm=?)"
@@ -575,7 +575,7 @@ def resolve_phone_conflict(tenant_id: int, phone: str, keep_norm: str | None,
 
 
 def get_suspicious_phones(tenant_id: int) -> list:
-    """شماره‌های ساختگیِ فعال — فقط اطلاع‌رسانی، بلاک نیست"""
+    """Active fake-looking numbers — informational only, not a block"""
     init_user_db()
     conn = get_conn(USER_RECORDS_DB)
     rows = conn.execute(
