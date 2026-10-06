@@ -51,7 +51,7 @@ async def lifespan(app: FastAPI):
         task.cancel()
 
 
-app = FastAPI(title="Nikravan AI Chat Widget", lifespan=lifespan)
+app = FastAPI(title="AI Counseling Widget", lifespan=lifespan)
 
 @app.middleware("http")
 async def security_headers(request, call_next):

@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="docs/landing.png" alt="Nikravan AI Widget — AI-powered counseling intake" width="820">
+  <img src="docs/landing.png" alt="AI Counseling Widget — AI-powered counseling intake" width="820">
 </p>
 
-<h1 align="center">Nikravan AI Widget</h1>
+<h1 align="center">AI Counseling Widget</h1>
 
 <p align="center">
   <b>An AI-powered intake system for counseling centers — shipped as a Persian RTL chat widget.</b><br>
@@ -12,13 +12,13 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Mohammad-Hasan-Kaman/nikravan-ai-widget/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="License: MIT"></a>
+  <a href="https://github.com/Mohammad-Hasan-Kaman/ai-counseling-widget/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/python-3.11%2B-blue" alt="Python 3.11+">
   <img src="https://img.shields.io/badge/FastAPI-0.115-009688" alt="FastAPI">
   <img src="https://img.shields.io/badge/AI-triage%20%2B%20matching-ff6f00" alt="AI triage and matching">
   <img src="https://img.shields.io/badge/UI-Persian%20RTL-8a2be2" alt="Persian RTL UI">
   <img src="https://img.shields.io/badge/storage-SQLite-0367a6" alt="SQLite storage">
-  <a href="https://github.com/Mohammad-Hasan-Kaman/nikravan-ai-widget/stargazers"><img src="https://img.shields.io/github/stars/Mohammad-Hasan-Kaman/nikravan-ai-widget?style=social" alt="Stars"></a>
+  <a href="https://github.com/Mohammad-Hasan-Kaman/ai-counseling-widget/stargazers"><img src="https://img.shields.io/github/stars/Mohammad-Hasan-Kaman/ai-counseling-widget?style=social" alt="Stars"></a>
 </p>
 
 <p align="center">
@@ -67,8 +67,8 @@ This is not a chat box bolted onto a form — the AI *is* the product:
 ## Quick start
 
 ```bash
-git clone https://github.com/Mohammad-Hasan-Kaman/nikravan-ai-widget.git
-cd nikravan-ai-widget
+git clone https://github.com/Mohammad-Hasan-Kaman/ai-counseling-widget.git
+cd ai-counseling-widget
 
 python -m venv .venv
 # Linux/macOS:  source .venv/bin/activate

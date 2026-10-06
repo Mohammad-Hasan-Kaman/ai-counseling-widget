@@ -1,4 +1,4 @@
-# Contributing to Nikravan AI Widget
+# Contributing to AI Counseling Widget
 
 Thanks for your interest in improving this project. This repository is a snapshot of a
 production Persian-language chat widget for counseling centers, so please keep changes
@@ -7,8 +7,8 @@ focused and backward compatible.
 ## Development setup
 
 ```bash
-git clone https://github.com/Mohammad-Hasan-Kaman/nikravan-ai-widget.git
-cd nikravan-ai-widget
+git clone https://github.com/Mohammad-Hasan-Kaman/ai-counseling-widget.git
+cd ai-counseling-widget
 
 python -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
