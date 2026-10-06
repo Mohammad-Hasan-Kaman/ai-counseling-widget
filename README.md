@@ -1,34 +1,50 @@
 <p align="center">
-  <img src="docs/landing.png" alt="Nikravan AI Widget — landing page" width="820">
+  <img src="docs/landing.png" alt="Nikravan AI Widget — AI-powered counseling intake" width="820">
 </p>
 
 <h1 align="center">Nikravan AI Widget</h1>
 
 <p align="center">
-  <b>Multi-tenant Persian RTL chat widget for counseling centers and clinics.</b><br>
-  Every tenant gets an API key and an admin panel, drops one <code>&lt;script&gt;</code> tag on their site,
-  and sees their own conversations and leads.
+  <b>An AI-powered intake system for counseling centers — shipped as a Persian RTL chat widget.</b><br>
+  An AI triage assistant talks to every visitor, runs the GHQ-28 mental-health screening,
+  extracts clinical concepts from the conversation and matches the person to the right consultant.
+  Every tenant gets an API key and an admin panel, and drops one <code>&lt;script&gt;</code> tag on their site.
 </p>
 
 <p align="center">
-  <a href="https://github.com/Mohammad-Hasan-Kaman/nikravan-widget-backup/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="License: MIT"></a>
+  <a href="https://github.com/Mohammad-Hasan-Kaman/nikravan-ai-widget/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/python-3.11%2B-blue" alt="Python 3.11+">
   <img src="https://img.shields.io/badge/FastAPI-0.115-009688" alt="FastAPI">
+  <img src="https://img.shields.io/badge/AI-triage%20%2B%20matching-ff6f00" alt="AI triage and matching">
   <img src="https://img.shields.io/badge/UI-Persian%20RTL-8a2be2" alt="Persian RTL UI">
   <img src="https://img.shields.io/badge/storage-SQLite-0367a6" alt="SQLite storage">
-  <a href="https://github.com/Mohammad-Hasan-Kaman/nikravan-widget-backup/stargazers"><img src="https://img.shields.io/github/stars/Mohammad-Hasan-Kaman/nikravan-widget-backup?style=social" alt="Stars"></a>
+  <a href="https://github.com/Mohammad-Hasan-Kaman/nikravan-ai-widget/stargazers"><img src="https://img.shields.io/github/stars/Mohammad-Hasan-Kaman/nikravan-ai-widget?style=social" alt="Stars"></a>
 </p>
 
 <p align="center">
-  <a href="#-quick-start">Quick start</a> ·
-  <a href="#-embed-on-a-tenant-site">Embed</a> ·
-  <a href="#-api">API</a> ·
-  <a href="#-admin-panel">Admin panel</a> ·
-  <a href="#-matching-engine">Matching engine</a> ·
-  <a href="#-deployment">Deployment</a>
+  <a href="#ai-at-the-core">AI at the core</a> ·
+  <a href="#quick-start">Quick start</a> ·
+  <a href="#embed-on-a-tenant-site">Embed</a> ·
+  <a href="#api">API</a> ·
+  <a href="#admin-panel">Admin panel</a> ·
+  <a href="#matching-engine">Matching engine</a> ·
+  <a href="#deployment">Deployment</a>
 </p>
 
 ---
+
+## AI at the core
+
+This is not a chat box bolted onto a form — the AI *is* the product:
+
+| AI capability | What it does |
+|---|---|
+| **AI triage assistant** | A conversational Persian assistant guides each visitor through the intake flow (name, contact details, reason for the visit) and computes each next question from the visitor's previous answers — no rigid form. |
+| **GHQ-28 mental-health screening** | 28 questions across four subscales (somatic, anxiety, social, depression), scored and interpreted server-side by the screening engine. |
+| **Clinical concept extraction** | The assistant detects clinical concepts (e.g. anxiety, depression, sleep, family issues) from the visitor's free text using a curated clinical lexicon. |
+| **AI consultant matching** | `SpiralMatchEngine` ranks available consultants by gender, branch, age, session type, extracted concepts, screening results and live appointment slots. |
+| **Self-learning weights** | Every success/failure report from the panel updates the engine's per-tenant weights, so recommendations improve with use. |
+| **Fully local AI** | All reasoning runs inside this codebase — no third-party AI API, no external LLM, no visitor data ever leaves your server. |
 
 ## Highlights
 
@@ -37,24 +53,22 @@
 | **One-line embed** | A single `<script>` tag with a per-tenant `nk_…` API key. No build step, no SDK. |
 | **Multi-tenant by design** | API keys, admin accounts, allowed domains, conversation flows and consultant data are all scoped per tenant. |
 | **Configurable flow** | Welcome message → numbered steps (text / phone / number / choice) → GHQ-28 screening → outcome. Edited live from the panel, no redeploy. |
-| **GHQ-28 screening** | 28 questions across four subscales (somatic, anxiety, social, depression), scored and interpreted server-side. |
-| **Lead capture that never drops** | A request is persisted *before* the matching step, so a user who needs a consultant is always recorded — even when no match is found. |
-| **Self-learning matching** | Per-tenant concept weights updated from success/failure feedback; profile cache is thread-safe and tenant-isolated. |
+| **Lead capture that never drops** | A request is persisted *before* the matching step, so a visitor who needs a consultant is always recorded — even when no match is found. |
 | **Availability crawler** | Background crawler pulls open appointment slots every 2 hours (on by default; toggle with `CRAWLER_ENABLED`). |
-| **Demo per tenant** | Each tenant gets a shareable `/demo/{api_key}` page to try the widget live. |
+| **Demo per tenant** | Each tenant gets a shareable `/demo/{api_key}` page to try the AI assistant live. |
 | **Persian-first UI** | Full RTL layout and Persian formatting in both the widget and the panel. |
 
 ## Screenshots
 
-| Landing page | Chat widget |
+| Landing page | AI chat widget |
 |---|---|
 | <img src="docs/landing.png" width="430"> | <img src="docs/widget.png" width="300"> |
 
 ## Quick start
 
 ```bash
-git clone https://github.com/Mohammad-Hasan-Kaman/nikravan-widget-backup.git
-cd nikravan-widget-backup
+git clone https://github.com/Mohammad-Hasan-Kaman/nikravan-ai-widget.git
+cd nikravan-ai-widget
 
 python -m venv .venv
 # Linux/macOS:  source .venv/bin/activate
@@ -72,8 +86,8 @@ Then open:
 | URL | Purpose |
 |-----|---------|
 | `/` | Product landing page |
-| `/widget?key=nk_…` | The chat widget (standalone) |
-| `/demo/{api_key}` | Shareable live demo for one tenant |
+| `/widget?key=nk_…` | The AI chat widget (standalone) |
+| `/demo/{api_key}` | Shareable live AI demo for one tenant |
 | `/admin` | Admin panel (super admin / tenant admin) |
 | `/api/chat/health` | Health check → `{"status":"ok"}` |
 
@@ -99,7 +113,7 @@ tenant's **allowed domains** (set by the super admin) plus in `CORS_ORIGINS`.
 |--------|----------|------|-------------|
 | `GET`  | `/api/chat/health` | — | Liveness probe |
 | `POST` | `/api/chat/session` | API key | Create or resume a widget session |
-| `POST` | `/api/chat/message` | session token | Send one message, get the next flow step |
+| `POST` | `/api/chat/message` | session token | Send one message, get the AI's next step |
 
 Rate limits: **30 requests/minute** per client IP + session token, and
 **10 failed login attempts / 5 minutes** per IP (anti brute-force).
@@ -109,12 +123,12 @@ Rate limits: **30 requests/minute** per client IP + session token, and
 **Tenant admin** (`/admin`)
 
 - 📊 **Dashboard** — user / request / conversation stats, appointment-slot status, API key + embed code
-- 💬 **Conversations** — full transcript of every chat
+- 💬 **Conversations** — full transcript of every AI conversation
 - 📥 **Requests** — lead table with Persian Excel export
 - 📣 **Announcement** — broadcast message shown on the next widget open
 - ⚙️ **Flow editor** — welcome text, steps, GHQ-28, outcome (recommend a consultant or capture a lead)
 - 👥 **Consultants** — active Excel roster (view / preview / download), upload new, data-validity report
-- 🧠 **Feedback & learning** — success/failure feedback plus the engine's live weight table
+- 🧠 **Feedback & learning** — success/failure feedback plus the AI engine's live weight table
 - 🔄 **Availability crawl** — status and trigger for the background crawler
 
 **Super admin** — create tenants, issue / rotate API keys, reset passwords, manage allowed domains,
@@ -122,11 +136,11 @@ enable/disable tenants, add tenant admins, change own password.
 
 ## Matching engine
 
-`SpiralMatchEngine` (`app/internal_ai_engine.py`):
+`SpiralMatchEngine` (`app/internal_ai_engine.py`) is the AI brain behind every recommendation:
 
 1. **Filters** — gender, branch/city, age, session type
 2. **Concept extraction** — clinical concepts detected from the free-text message
-3. **GHQ context** — screening results weight the recommendation
+3. **GHQ context** — AI screening results weight the recommendation
 4. **Availability** — open appointment slots pulled by the crawler
 5. **Learning weights** — per-tenant weights updated from panel feedback
 
@@ -141,15 +155,15 @@ app/
 ├── config.py                Env-based configuration (.env)
 ├── db.py                    SQLite init + hourly garbage collection
 ├── auth.py                  PBKDF2 password hashing, signed session cookies (4 h TTL)
-├── tenants.py               Tenants, API keys, seed data, default flow
-├── session_store.py         Per-tenant flow engine (steps, GHQ, lead capture)
-├── internal_ai_engine.py    SpiralMatchEngine — per-tenant cache + learning weights
-├── ghq_analyzer.py          GHQ-28 scoring (4 subscales)
+├── tenants.py               Tenants, API keys, seed data, default AI flow
+├── session_store.py         Per-tenant AI flow engine (steps, GHQ, lead capture)
+├── internal_ai_engine.py    SpiralMatchEngine — concept extraction + learning weights
+├── ghq_analyzer.py          GHQ-28 AI screening (4 subscales)
 ├── crawler.py               Availability crawler (every 2 h)
 ├── excel_to_json.py         Consultant Excel → JSON profiles
 ├── admin_tools.py           Persian Excel export
 └── routers/
-    ├── chat.py              Public chat API (API key + rate limit + announcement)
+    ├── chat.py              Public AI chat API (API key + rate limit + announcement)
     └── admin.py             Admin panel + super-admin endpoints
 static/                      landing.html · demo.html · widget.js / widget.html / widget-app.js
 flows/                       JSON flow definitions per tenant
@@ -160,7 +174,7 @@ data/                        SQLite DBs + consultant JSON (git-ignored)
 
 - **Passwords** — PBKDF2-HMAC-SHA256, 100 000 iterations, per-user random salt
 - **Sessions** — signed, time-limited cookies (`itsdangerous`), 4 h for the panel, 24 h for widget sessions
-- **Rate limiting** — 30 msg/min/session, 10 login attempts/5 min/IP
+- **Rate limiting** — 30 requests/minute per IP + session token, 10 failed logins/5 min/IP
 - **CORS** — explicit origin allow-list from `CORS_ORIGINS` (never `*`)
 - **Headers** — `X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN` (relaxed only for `/widget` so it can be embedded)
 - **Tenant isolation** — domain allow-list per tenant, API-key scoped queries, tenant-scoped caches
@@ -182,7 +196,7 @@ curl http://127.0.0.1:8000/api/chat/health   # {"status":"ok"}
 - Python 3.11+
 - See [`requirements.txt`](requirements.txt) — FastAPI, Uvicorn, Jinja2, pandas/openpyxl,
   APScheduler, BeautifulSoup4, httpx, itsdangerous
-- No external database or third-party AI service required — matching runs locally
+- No external database and no third-party AI service required — the AI runs locally
 
 ## Contributing
 

@@ -7,8 +7,8 @@ focused and backward compatible.
 ## Development setup
 
 ```bash
-git clone https://github.com/Mohammad-Hasan-Kaman/nikravan-widget-backup.git
-cd nikravan-widget-backup
+git clone https://github.com/Mohammad-Hasan-Kaman/nikravan-ai-widget.git
+cd nikravan-ai-widget
 
 python -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate

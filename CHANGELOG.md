@@ -7,6 +7,9 @@ and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.
 ## [Unreleased]
 
 ### Changed
+- Repository renamed to **`nikravan-ai-widget`** to reflect the AI product (old URL redirects).
+- README rewritten with an "AI at the core" section describing the triage assistant,
+  GHQ-28 screening, clinical concept extraction, consultant matching and self-learning weights.
 - Repository documentation rewritten in English (README, DEPLOY, `.env.example` comments).
 - All developer comments and docstrings translated to English; end-user UI text stays Persian.
 - Added `LICENSE` (MIT), `CONTRIBUTING.md`, `CHANGELOG.md` and `docs/` screenshots.
