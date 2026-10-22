@@ -8,6 +8,11 @@ and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.
 
 ### Changed
 - Repository renamed to **`ai-counseling-widget`** — an AI-first, brand-neutral public name (old URLs redirect).
+- `docs/widget.png` re-rendered from a real run of the widget against a neutral demo
+  tenant, so the published screenshot shows no organization name.
+- Widget page `<title>` is now the generic `چت سامانه هوشمند پذیرش`; the tenant name was
+  already rendered per-tenant in the header, but the document title still carried the
+  operator's own center name.
 - README rewritten with an "AI at the core" section describing the triage assistant,
   GHQ-28 screening, clinical concept extraction, consultant matching and self-learning weights.
 - Repository documentation rewritten in English (README, DEPLOY, `.env.example` comments).
