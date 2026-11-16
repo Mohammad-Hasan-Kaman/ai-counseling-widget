@@ -18,11 +18,11 @@ def _profiles():
          "education_experience": "روانشناس بالینی", "general_area": "اضطراب",
          "general_area_2": "", "specializations": {"اضطراب": "درمان اضطراب"},
          "detailed_topics": "اضطراب استرس پانیک", "age_range": "", "license": "", "notes": ""},
-        {"name": "حامد مجدی", "ability": 2.0, "location": "ظفر",
+        {"name": "رضا محمدی", "ability": 2.0, "location": "ظفر",
          "education_experience": "", "general_area": "", "general_area_2": "",
          "specializations": {}, "detailed_topics": "نوجوان کنکور", "age_range": "۱۲-۲۰",
          "license": "", "notes": ""},
-        {"name": "سید مجید ذاکری", "ability": 2.0, "location": "هر دو",
+        {"name": "علی رضایی", "ability": 2.0, "location": "هر دو",
          "education_experience": "وکالت خانواده", "general_area": "حقوقی",
          "general_area_2": "", "specializations": {"مشاوره حقوقی خانواده": "حقوق"},
          "detailed_topics": "طلاق مهریه", "age_range": "", "license": "", "notes": ""},
@@ -85,7 +85,7 @@ def test_parse_age_bounds_elten_range():
 
 
 def test_gender_inference():
-    assert get_consultant_gender("سید مجید ذاکری") == "آقا"
+    assert get_consultant_gender("علی رضایی") == "آقا"
     assert get_consultant_gender("مریم احمدی") == "خانم"  # پیش‌فرض: خانم
 
 
@@ -101,17 +101,17 @@ def test_gender_preference_hard_filter(env):
 
 
 def test_age_filter_then_relax(env):
-    # حامد مجدی ۱۲-۲۰؛ کاربر ۴۰ ساله → فیلتر سنی رد می‌کند ولی relax-age باید برگرداند
+    # رضا محمدی ۱۲-۲۰؛ کاربر ۴۰ ساله → فیلتر سنی رد می‌کند ولی relax-age باید برگرداند
     # سید مجید به خاطر فیلتر حقوقی (موضوع غیرحقوقی) در هیچ سطحی برنمی‌گردد
     recs = engine.match({
         "age": 40, "preferred_gender": "آقا", "branch": "اهمیتی ندارد",
         "topic": "موضوع عمومی", "expectation": "",
     }, env["tenant_id"])
     names = [r["name"] for r in recs]
-    assert "حامد مجدی" in names  # فقط با relax سنی برگشته
+    assert "رضا محمدی" in names  # فقط با relax سنی برگشته
     assert all(r["gender"] == "آقا" for r in recs)  # جنسیت حفظ شده
     assert "مریم احمدی" not in names
-    assert "سید مجید ذاکری" not in names  # حقوقی، غیرمجاز
+    assert "علی رضایی" not in names  # حقوقی، غیرمجاز
 
 
 def test_last_resort_keeps_gender_only(env):
@@ -136,14 +136,14 @@ def test_legal_exclusion_and_exception(env):
         "topic": "اضطراب", "expectation": "",
     }, env["tenant_id"])
     names = [r["name"] for r in recs]
-    assert "سید مجید ذاکری" not in names
+    assert "علی رضایی" not in names
     # موضوع حقوقی → حقوقی مجاز است
     recs2 = engine.match({
         "age": 30, "preferred_gender": "فرقی ندارد", "branch": "اهمیتی ندارد",
         "topic": "طلاق و مهریه", "expectation": "",
     }, env["tenant_id"])
     names2 = [r["name"] for r in recs2]
-    assert "سید مجید ذاکری" in names2
+    assert "علی رضایی" in names2
 
 
 def test_branch_hard_filter(env):
@@ -165,7 +165,7 @@ def test_custom_branch_activates_filter(env):
          "education_experience": "", "general_area": "", "general_area_2": "",
          "specializations": {}, "detailed_topics": "اضطراب", "age_range": "",
          "license": "", "notes": ""},
-        {"name": "حامد مجدی", "ability": 2.0, "location": "ظفر",
+        {"name": "رضا محمدی", "ability": 2.0, "location": "ظفر",
          "education_experience": "", "general_area": "", "general_area_2": "",
          "specializations": {}, "detailed_topics": "نوجوان", "age_range": "",
          "license": "", "notes": ""},
@@ -215,7 +215,7 @@ def test_filter_profiles_for_user_hard_filters():
          "age": 0, "topic": "اضطراب", "expectation": ""},
         profiles)
     names = {p["clean_name"] for p in out3}
-    assert "سید مجید ذاکری" not in names
+    assert "علی رضایی" not in names
     assert "مریم احمدی" in names
 
 

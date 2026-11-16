@@ -90,7 +90,7 @@ def test_crawl_deletes_counselors_removed_from_site(dbs, tmp_path, monkeypatch):
     نوبتِ شبحی نباید امتیاز مچینگ را بالا ببرد"""
     monkeypatch.setattr(
         crawler, "MAPPING_JSON",
-        _mapping_file(tmp_path, ["مریم احمدی", "حامد مجدی"]))
+        _mapping_file(tmp_path, ["مریم احمدی", "رضا محمدی"]))
     monkeypatch.setattr(
         crawler, "fetch_page",
         lambda url: "<html><body>بدون جدول</body></html>")
@@ -103,7 +103,7 @@ def test_crawl_deletes_counselors_removed_from_site(dbs, tmp_path, monkeypatch):
     statuses = dict(_rows(1))
     assert "حذف‌شده از سایت" not in statuses
     assert statuses.get("مریم احمدی") == "no_table"
-    assert statuses.get("حامد مجدی") == "no_table"
+    assert statuses.get("رضا محمدی") == "no_table"
 
 
 def test_crawl_keeps_rows_when_stopped_early(dbs, tmp_path, monkeypatch):
