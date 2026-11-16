@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}بستهٔ اضافه{% endblock %}
+{% block content %}
+{% if flash %}<div class="flash">{{ flash }}</div>{% endif %}
+
+<div class="panel">
+  <h2>➕ خرید بستهٔ اضافه</h2>
+  <p style="font-size:12px;color:#777;">
+    سقف شما این ماه: <b>{{ quota_labels.msg }}</b> پیام هوشمند · <b>{{ quota_labels.intro }}</b> معرفی مشاور.
+    بستهٔ اضافه میزانِ <b>اضافه</b> می‌دهد و اعتبارش با ریست ماهانهٔ شمارنده‌ها پاک نمی‌شود.
+  </p>
+</div>
+
+{% if packages %}
+<div class="cards" style="margin-top:14px;">
+  {% for p in packages %}
+  <div class="card" style="text-align:center;">
+    <div style="font-size:15px;font-weight:700;color:#2E5E4E;">{{ p.name }}</div>
+    <div style="font-size:12px;color:#555;margin:6px 0;">
+      {% if p.extra_messages %}+{{ p.extra_messages }} پیام هوشمند{% endif %}
+      {% if p.extra_messages and p.extra_introductions %} ·{% endif %}
+      {% if p.extra_introductions %}+{{ p.extra_introductions }} معرفی{% endif %}
+    </div>
+    <div style="font-size:16px;font-weight:800;margin-bottom:10px;">
+      {{ price_label(p.price_rials) }}
+    </div>
+    <form method="post" action="/admin/topups/buy"
+          data-name="{{ p.name }}"
+          onsubmit="return confirm('درخواست خرید «' + this.dataset.name + '» ثبت شود؟ پس از تأیید و پرداخت، اعتبار اضافه می‌شود.');">
+      <input type="hidden" name="package_id" value="{{ p.id }}">
+      <button class="btn small" style="width:100%;">🛒 خرید</button>
+    </form>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="panel">
+  <p style="font-size:13px;color:#888;">
+    فعلاً بستهٔ اضافه‌ای برای فروش تعریف نشده. اگر سقف پلن شما کافی نیست، با پشتیبانی تماس بگیرید.
+  </p>
+</div>
+{% endif %}
+
+{% if plan_state and (plan_state.extra_messages or plan_state.extra_introductions) %}
+<div class="panel">
+  <h2>🎁 اعتبارِ اضافهٔ فعال شما</h2>
+  <p style="font-size:13px;">
+    <b>{{ plan_state.extra_messages }}</b> پیام هوشمند و <b>{{ plan_state.extra_introductions }}</b> معرفیِ اضافه
+    روی سقف شما نشسته و تا پایان استفاده باقی می‌ماند.
+  </p>
+</div>
+{% endif %}
+
+{% if requests %}
+<div class="panel">
+  <h2>🧾 سوابق درخواست‌های من</h2>
+  <table style="width:100%;border-collapse:collapse;font-size:12px;">
+    <tr style="background:#f0f4f2;">
+      <th style="padding:7px;text-align:right;">بسته</th>
+      <th style="padding:7px;">مبلغ (تومان)</th>
+      <th style="padding:7px;">وضعیت</th>
+      <th style="padding:7px;">تاریخ</th>
+    </tr>
+    {% for r in requests %}
+    <tr style="border-bottom:1px solid #eee;">
+      <td style="padding:7px;">{{ r.package_name }}</td>
+      <td style="padding:7px;text-align:center;">{{ price_label(r.price_rials) }}</td>
+      <td style="padding:7px;text-align:center;">
+        {% if r.status == 'pending' %}⏳ در انتظار تأیید
+        {% elif r.status == 'approved' %}✅ تأیید شد
+        {% else %}🚫 رد شد{% endif %}
+      </td>
+      <td style="padding:7px;direction:ltr;">{{ r.requested_at }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endif %}
+{% endblock %}

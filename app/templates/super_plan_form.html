@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block title %}{% if plan %}ویرایش پلن{% else %}ساخت پلن{% endif %} — سوپر ادمین{% endblock %}
+{% block nav %}
+<nav>
+  <a href="/admin">مشتریان</a>
+  <a href="/admin/super/plans" class="active">پلن‌ها</a>
+  <a href="/admin/password">تغییر رمز</a>
+</nav>
+{% endblock %}
+{% block content %}
+{% if flash %}<div class="flash">{{ flash }}</div>{% endif %}
+{% if test_result %}
+<div class="flash" style="background:{% if test_result[0] %}#eaf5ef{% else %}#fdeceb{% endif %};border-color:{% if test_result[0] %}#bcd9c8{% else %}#f5c6c2{% endif %};color:{% if test_result[0] %}#1e4634{% else %}#8a1f1a{% endif %};">{{ test_result[1] }}</div>
+{% endif %}
+
+<div class="panel">
+  <h2>{% if plan %}✏️ ویرایش پلن «{{ plan.name }}»{% else %}➕ ساخت پلن جدید{% endif %}</h2>
+
+  <form method="post" action="{% if plan %}/admin/super/plans/{{ plan.id }}{% else %}/admin/super/plans{% endif %}">
+    <div class="row">
+      <div>
+        <label style="font-size:12px;">نام پلن</label>
+        <input type="text" name="name" required value="{{ plan.name if plan else '' }}" placeholder="مثلاً: پایه ۵۰تایی">
+      </div>
+      <div>
+        <label style="font-size:12px;">نوع پلن</label>
+        <select name="mode" id="mode-select">
+          {% for val, lbl in mode_labels.items() %}
+          <option value="{{ val }}" {% if plan and plan.mode == val %}selected{% elif not plan and val == 'weak' %}selected{% endif %}>{{ lbl }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label style="font-size:12px;">ردهٔ فروش (جدول قیمت)</label>
+        <select name="tier" id="tier-select">
+          {% for val, lbl in tier_labels.items() %}
+          <option value="{{ val }}" {% if plan and plan.tier == val %}selected{% elif not plan and val == 'base' %}selected{% endif %}>{{ lbl }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <br>
+    <div class="row">
+      <div>
+        <label style="font-size:12px;">base URL ارائه‌دهنده LLM</label>
+        <input type="text" name="base_url" value="{{ plan.base_url if plan else '' }}" placeholder="https://api.example.com/v1" style="direction:ltr;" class="llm-field">
+      </div>
+      <div>
+        <label style="font-size:12px;">نام مدل</label>
+        <input type="text" name="model" value="{{ plan.model if plan else '' }}" placeholder="your-model-name" style="direction:ltr;" class="llm-field">
+      </div>
+      <div>
+        <label style="font-size:12px;">API Key {% if plan %}<span style="color:#999;">(خالی = بدون تغییر)</span>{% endif %}</label>
+        <input type="password" name="api_key" value="" placeholder="sk-..." style="direction:ltr;" class="llm-field" autocomplete="off">
+      </div>
+    </div>
+    <br>
+    <div class="row">
+      <div>
+        <label style="font-size:12px;">سقف پیام LLM (عدد یا خالی=نامحدود؛ فقط پلن LLM‌دار)</label>
+        <input type="number" name="message_quota" value="{{ plan.message_quota if plan else -1 }}" min="-1" class="llm-field">
+      </div>
+      <div>
+        <label style="font-size:12px;">سقف معرفی مشاور (عدد یا خالی=نامحدود)</label>
+        <input type="number" name="introduction_quota" value="{{ plan.introduction_quota if plan else -1 }}" min="-1">
+      </div>
+      <div style="flex:0;">
+        <button class="btn">{% if plan %}ذخیره تغییرات{% else %}ساخت پلن{% endif %}</button>
+      </div>
+    </div>
+    <p style="font-size:11px;color:#777;margin-top:10px;">
+      ℹ️ سقف <b>-1 یا خالی = نامحدود</b>؛ صفر = از همان ابتدا قفل. سقف معرفی بعد از هر بار نمایش معرفی مشاور ۱ واحد کم می‌شود.
+      پلن «ضعیف» هیچ فراخوانی LLM ندارد.
+    </p>
+    <p style="font-size:11px;color:#777;">
+      🏷️ <b>ردهٔ فروش</b> تعیین می‌کند کدام قابلیت‌های تجاری باز باشند: فقط <b>«کامل»</b> به
+      <a href="/admin/report">گزارش دوره‌ای</a> دسترسی دارد. این رده از سقف‌ها مستقل است — عوض‌کردن سقف،
+      گزارشِ مشتری را خاموش نمی‌کند.
+    </p>
+    <p style="font-size:11px;color:#a33;margin-top:6px;" id="tier-warn" hidden>
+      ⚠️ این رده با نوع پلنِ انتخابی سازگار نیست؛ گزینه‌های ممکن بالا محدود شدند.
+    </p>
+  </form>
+
+  <form method="post" action="/admin/super/plans/test-connection" style="margin-top:8px;">
+    {% if plan %}<input type="hidden" name="plan_id" value="{{ plan.id }}">{% endif %}
+    <input type="hidden" name="base_url" id="test_base_url" value="{{ plan.base_url if plan else '' }}">
+    <input type="hidden" name="model" id="test_model" value="{{ plan.model if plan else '' }}">
+    <input type="hidden" name="api_key" id="test_api_key" value="">
+    <p style="font-size:12px;color:#666;">
+      🧪 قبل از ذخیره، مقادیر فرم بالا (base_url، مدل و کلید) با «تست اتصال» بررسی می‌شوند.
+      کلید خالی در حالت ویرایش = استفاده از کلید ذخیره‌شده.
+    </p>
+    <button class="btn small" onclick="
+      document.getElementById('test_base_url').value = document.querySelector('[name=base_url]').value;
+      document.getElementById('test_model').value = document.querySelector('[name=model]').value;
+      document.getElementById('test_api_key').value = document.querySelector('[name=api_key]').value;
+    ">🔬 تست اتصال LLM</button>
+  </form>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+// هر ردهٔ فروش فقط روی یک mode معنا دارد (پایه→ضعیف، استاندارد→متوسط،
+// حرفه‌ای/کامل→پیشرفته). دو select مستقل‌اند، پس بدون این هم‌بندی می‌شد پلنی
+// ساخت که مثلاً «کامل» است ولی حالتِ «ضعیف» دارد — یعنی قابلیت‌های ناسازگار.
+(function () {
+  var modeSel = document.getElementById('mode-select');
+  var tierSel = document.getElementById('tier-select');
+  var warn = document.getElementById('tier-warn');
+  if (!modeSel || !tierSel) return;
+  var ALL = { base: 'weak', standard: 'medium', pro: 'advanced', full: 'advanced' };
+
+  function sync() {
+    var mode = modeSel.value;
+    var touched = false;
+    Array.prototype.forEach.call(tierSel.options, function (o) {
+      var ok = ALL[o.value] === mode;
+      o.disabled = !ok;
+      if (!ok && o.selected) touched = true;
+    });
+    if (warn) warn.hidden = !touched;
+  }
+  modeSel.addEventListener('change', sync);
+  sync();
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block title %}بستهٔ اضافه — سوپر ادمین{% endblock %}
+{% block nav %}
+<nav>
+  <a href="/admin">مشتریان</a>
+  <a href="/admin/super/plans">پلن‌ها</a>
+  <a href="/admin/super/topups" class="active">بستهٔ اضافه</a>
+  <a href="/admin/super/examples">نمونه‌های LLM</a>
+  <a href="/admin/password">تغییر رمز</a>
+</nav>
+{% endblock %}
+{% block content %}
+{% if flash %}<div class="flash">{{ flash }}</div>{% endif %}
+
+<div class="panel">
+  <h2>➕ ساخت بستهٔ اضافه</h2>
+  <p style="font-size:12px;color:#777;margin-bottom:12px;">
+    بسته = مقدارِ <b>اضافه</b> روی سقف، نه سقفِ جدید. اعتبارِ خریده‌شده به سقفِ
+    مشتری جمع می‌شود و با ریست ماهانهٔ شمارنده‌ها پاک <b>نمی‌شود</b>.
+    مبلغ به ریال است (۱ تومان = ۱۰ ریال).
+  </p>
+  <form method="post" action="/admin/super/topups/packages">
+    <div class="row">
+      <div>
+        <label style="font-size:12px;">نام بسته</label>
+        <input type="text" name="name" required placeholder="مثلاً: ۱۰۰۰ پیام اضافه">
+      </div>
+      <div>
+        <label style="font-size:12px;">پیام هوشمند اضافه</label>
+        <input type="number" name="extra_messages" min="0" value="0">
+      </div>
+      <div>
+        <label style="font-size:12px;">معرفی مشاور اضافه</label>
+        <input type="number" name="extra_introductions" min="0" value="0">
+      </div>
+      <div>
+        <label style="font-size:12px;">مبلغ (ریال)</label>
+        <input type="number" name="price_rials" min="0" value="0">
+      </div>
+      <div style="flex:0;">
+        <button class="btn">ساخت بسته</button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<div class="panel">
+  <h2>📦 بسته‌های تعریف‌شده</h2>
+  {% if packages %}
+  <table style="width:100%;border-collapse:collapse;font-size:13px;">
+    <tr style="background:#f0f4f2;">
+      <th style="padding:8px;text-align:right;">نام</th>
+      <th style="padding:8px;">پیام اضافه</th>
+      <th style="padding:8px;">معرفی اضافه</th>
+      <th style="padding:8px;">قیمت (ریال)</th>
+      <th style="padding:8px;">وضعیت</th>
+      <th style="padding:8px;"></th>
+    </tr>
+    {% for p in packages %}
+    <tr style="border-bottom:1px solid #eee;">
+      <td style="padding:8px;">{{ p.name }}</td>
+      <td style="padding:8px;text-align:center;">{{ p.extra_messages }}</td>
+      <td style="padding:8px;text-align:center;">{{ p.extra_introductions }}</td>
+      <td style="padding:8px;text-align:center;">{{ price_label(p.price_rials) }}</td>
+      <td style="padding:8px;text-align:center;">{{ '🟢 فعال' if p.active else '⚪️ غیرفعال' }}</td>
+      <td style="padding:8px;text-align:center;">
+        <form method="post" action="/admin/super/topups/packages/{{ p.id }}/toggle" style="display:inline;">
+          <button class="btn small">{{ 'غیرفعال کن' if p.active else 'فعال کن' }}</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+  <p style="font-size:11px;color:#888;margin-top:8px;">
+    غیرفعال‌کردن بسته آن را از فروشگاه مشتری پنهان می‌کند؛ خریدهای تأییدنشدهٔ قبلی دست‌نخورده می‌مانند.
+  </p>
+  {% else %}
+  <p style="font-size:13px;color:#888;">هنوز بسته‌ای تعریف نشده.</p>
+  {% endif %}
+</div>
+
+<div class="panel">
+  <h2>🛒 درخواست‌های در انتظار تأیید</h2>
+  {% if pending %}
+  <p style="font-size:12px;color:#a33;margin-bottom:10px;">
+    اعتبار بسته‌ها پس از «تأیید» به سقف مشتری اضافه می‌شود، نه همان لحظهٔ خرید —
+    چون پرداخت هنوز تأیید نشده.
+  </p>
+  <table style="width:100%;border-collapse:collapse;font-size:13px;">
+    <tr style="background:#f0f4f2;">
+      <th style="padding:8px;text-align:right;">مشتری</th>
+      <th style="padding:8px;">بسته</th>
+      <th style="padding:8px;">پیام</th>
+      <th style="padding:8px;">معرفی</th>
+      <th style="padding:8px;">مبلغ (ریال)</th>
+      <th style="padding:8px;">درخواست‌دهنده</th>
+      <th style="padding:8px;">تاریخ</th>
+      <th style="padding:8px;"></th>
+    </tr>
+    {% for r in pending %}
+    <tr style="border-bottom:1px solid #eee;">
+      <td style="padding:8px;">{{ r.tenant_name }}</td>
+      <td style="padding:8px;">{{ r.package_name }}</td>
+      <td style="padding:8px;text-align:center;">{{ r.extra_messages }}</td>
+      <td style="padding:8px;text-align:center;">{{ r.extra_introductions }}</td>
+      <td style="padding:8px;text-align:center;">{{ price_label(r.price_rials) }}</td>
+      <td style="padding:8px;font-size:12px;">{{ r.requested_by or '—' }}</td>
+      <td style="padding:8px;font-size:11px;direction:ltr;">{{ r.requested_at }}</td>
+      <td style="padding:8px;white-space:nowrap;">
+        <form method="post" action="/admin/super/topups/{{ r.id }}/resolve" style="display:inline;">
+          <input type="hidden" name="approve" value="1">
+          <button class="btn small" onclick="return confirm('اعتبار به سقف این مشتری اضافه شود؟');">✅ تأیید</button>
+        </form>
+        <form method="post" action="/admin/super/topups/{{ r.id }}/resolve" style="display:inline;">
+          <input type="hidden" name="approve" value="0">
+          <button class="btn small danger">🚫 رد</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p style="font-size:13px;color:#888;">درخواست در انتظاری وجود ندارد.</p>
+  {% endif %}
+</div>
+
+{% if history %}
+<div class="panel">
+  <h2>🧾 تاریخچهٔ بررسی‌شده‌ها</h2>
+  <table style="width:100%;border-collapse:collapse;font-size:12px;">
+    <tr style="background:#f0f4f2;">
+      <th style="padding:7px;text-align:right;">مشتری</th>
+      <th style="padding:7px;">بسته</th>
+      <th style="padding:7px;">مبلغ</th>
+      <th style="padding:7px;">نتیجه</th>
+      <th style="padding:7px;">تاریخ</th>
+    </tr>
+    {% for r in history %}
+    <tr style="border-bottom:1px solid #eee;">
+      <td style="padding:7px;">{{ r.tenant_name }}</td>
+      <td style="padding:7px;">{{ r.package_name }}</td>
+      <td style="padding:7px;text-align:center;">{{ price_label(r.price_rials) }}</td>
+      <td style="padding:7px;text-align:center;">{{ '✅ تأیید شد' if r.status == 'approved' else '🚫 رد شد' }}</td>
+      <td style="padding:7px;direction:ltr;">{{ r.requested_at }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endif %}
+{% endblock %}

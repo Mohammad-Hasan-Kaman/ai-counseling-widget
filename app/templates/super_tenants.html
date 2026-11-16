@@ -1,0 +1,415 @@
+{% extends "base.html" %}
+{% block title %}مدیریت مشتریان — سوپر ادمین{% endblock %}
+{% block nav %}
+<nav>
+  <a href="/admin" class="active">مشتریان</a>
+  <a href="/admin/super/plans">پلن‌ها</a>
+  <a href="/admin/super/topups">بستهٔ اضافه</a>
+  <a href="/admin/super/examples">نمونه‌های LLM</a>
+  <a href="/admin/password">تغییر رمز</a>
+</nav>
+{% endblock %}
+{% block content %}
+{% if flash %}<div class="flash">{{ flash }}</div>{% endif %}
+
+<style>
+  .t-card { background: #fff; border-radius: 12px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,.08); margin-top: 14px; border-inline-start: 4px solid #2E5E4E; }
+  .t-card.inactive { border-inline-start-color: #a33; background: #fdf6f5; }
+  .t-head { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+  .t-head .t-name { font-size: 16px; font-weight: 700; color: #2E5E4E; }
+  .t-head .t-slug { font-size: 12px; color: #888; font-family: monospace; direction: ltr; }
+  .badge { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 12px; }
+  .badge.on { background: #eaf5ef; color: #1c7a54; }
+  .badge.off { background: #fdeceb; color: #a33; }
+  .t-stats { display: flex; gap: 22px; flex-wrap: wrap; margin: 12px 0; }
+  .t-stat { text-align: center; min-width: 64px; }
+  .t-stat .n { font-size: 20px; font-weight: 800; color: #2E5E4E; }
+  .t-stat .l { font-size: 11px; color: #777; }
+  .t-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .keyline { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; background: #f0f4f2; border-radius: 8px; padding: 7px 12px; margin: 8px 0; font-size: 12px; }
+  .keyline .mono { font-size: 12px; }
+  .mini { padding: 4px 10px; font-size: 11px; border-radius: 6px; }
+  .t-ops { display: none; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #d5e0da; }
+  .t-ops.open { display: block; }
+  .op-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
+  .op-row label { font-size: 11px; color: #666; min-width: 90px; }
+  .op-row input[type=text], .op-row input[type=password] { width: 220px; padding: 6px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 12px; font-family: inherit; }
+  .searchbar { display: flex; gap: 10px; align-items: center; margin-top: 4px; flex-wrap: wrap; }
+  .searchbar input { max-width: 320px; }
+  .searchbar .count { font-size: 12px; color: #777; }
+  details summary { font-size: 13px; color: #2E5E4E; cursor: pointer; }
+  #create-panel { background: #fff; border-radius: 12px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,.08); margin-top: 4px; }
+  #create-panel summary { font-weight: 700; color: #2E5E4E; font-size: 14px; }
+</style>
+
+<div class="panel">
+  <h2>🏢 مشتریان</h2>
+  <div class="searchbar">
+    <input type="text" id="tenant-search" placeholder="🔍 جستجو بر اساس نام یا شناسه..." style="max-width:320px;">
+    <span class="count" id="tenant-count"></span>
+  </div>
+</div>
+
+<details id="create-panel">
+  <summary>➕ ساخت مشتری جدید</summary>
+  <div style="margin-top:14px;">
+    <form method="post" action="/admin/super/tenants">
+      <div class="row">
+        <div><label style="font-size:12px;">نام مرکز</label><input type="text" name="name" required placeholder="کلینیک مهر"></div>
+        <div><label style="font-size:12px;">نام کاربری ادمین</label><input type="text" name="admin_username" required placeholder="mehr1" style="direction:ltr;"></div>
+        <div><label style="font-size:12px;">رمز ادمین (۸+)</label><input type="password" name="admin_password" required minlength="8"></div>
+        <div><label style="font-size:12px;">دامنه‌های مجاز (کاما جدا، اختیاری)</label><input type="text" name="allowed_domains" placeholder="example.com" style="direction:ltr;"></div>
+        <div style="flex:0;"><button class="btn">ساخت مشتری</button></div>
+      </div>
+    </form>
+  </div>
+</details>
+
+<div id="tenant-list">
+{% for t in tenants %}
+<div class="t-card {% if not t.active %}inactive{% endif %}" data-name="{{ t.name }}" data-slug="{{ t.slug }}">
+  <div class="t-head">
+    <div>
+      <span class="t-name">{{ t.name }}</span>
+      <span class="t-slug"> · {{ t.slug }}</span>
+      {% if t.active %}<span class="badge on">فعال</span>{% else %}<span class="badge off">غیرفعال</span>{% endif %}
+    </div>
+    <div class="t-actions">
+      <a class="btn small" href="/demo/{{ t.api_key }}" target="_blank" title="دموی زنده با کلید این مشتری">🎯 دمو</a>
+      <button class="btn small mini" type="button" onclick="toggleOps(this)">⚙️ مدیریت</button>
+    </div>
+  </div>
+
+  <div class="t-stats">
+    <div class="t-stat"><div class="n">{{ t.leads }}</div><div class="l">لید</div></div>
+    <div class="t-stat"><div class="n">{{ t.chats }}</div><div class="l">گفتگو</div></div>
+    <div class="t-stat"><div class="n">{{ t.consultants }}</div><div class="l">مشاور</div></div>
+    <div class="t-stat"><div class="n" style="font-size:12px;direction:ltr;">{{ t.created or '—' }}</div><div class="l">تاریخ ساخت</div></div>
+    {% set pm = plan_map.get(t.id) %}
+    <div class="t-stat" style="min-width:140px;text-align:right;">
+      {% if pm %}
+      <div style="font-size:12px;font-weight:700;color:#2E5E4E;">📦 {{ pm.plan_name }}</div>
+      <div style="font-size:11px;color:#777;">{{ plan_mode_labels.get(pm.mode, pm.mode) }}</div>
+      {% if pm.mode != 'weak' %}
+      <div style="font-size:11px;direction:ltr;text-align:right;" title="مدل فعال این مشتری">
+        🤖 {{ pm.llm.model }} @ {{ pm.llm.base_url }}
+        {% if pm.llm.source == 'tenant' %}<span style="color:#1c7a54;">• اختصاصی</span>
+        {% else %}<span style="color:#999;">• از پلن</span>{% endif %}
+      </div>
+      {% endif %}
+      <div style="font-size:11px;">پیام: {{ quota_label(pm.messages_used, pm.effective_message_quota) }}</div>
+      <div style="font-size:11px;">معرفی: {{ quota_label(pm.introductions_used, pm.effective_introduction_quota) }}</div>
+      {% else %}
+      <div style="font-size:12px;font-weight:700;color:#a33;">⛔ بدون پلن — قفل</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="keyline">
+    <span style="color:#666;">کلید API:</span>
+    <span class="mono" data-full="{{ t.api_key }}">{{ t.api_key[:8] }}••••••••</span>
+    <button class="btn small mini" type="button" onclick="toggleKey(this)">نمایش</button>
+    <button class="btn small mini" type="button" onclick="copyKey(this)">کپی</button>
+  </div>
+  {% if t.domains %}
+  <div style="font-size:11px;color:#777;">دامنه‌های مجاز: <span style="direction:ltr;unicode-bidi:embed;">{{ t.domains }}</span></div>
+  {% else %}
+  <div style="font-size:11px;color:#aaa;">بدون محدودیت دامنه</div>
+  {% endif %}
+
+  <div class="t-ops">
+    <div class="op-row">
+      <form method="post" action="/admin/super/tenants/{{ t.id }}/regenerate-key"
+            onsubmit="return confirm('🔑 کلید API «{{ t.name }}» بازتولید شود؟ کلید قبلی باطل می‌شود و ویجت و لینک دموی فعلی از کار می‌افتد!');">
+        <button class="btn small danger">🔑 بازتولید کلید API</button>
+      </form>
+      <form method="post" action="/admin/super/tenants/{{ t.id }}/toggle"
+            onsubmit="return confirm('{% if t.active %}⚠️ «{{ t.name }}» غیرفعال شود؟ ویجت سایتش و دمویش بلافاصله قطع می‌شود.{% else %}«{{ t.name }}» فعال شود؟{% endif %}');">
+        <button class="btn small {% if t.active %}danger{% endif %}">{% if t.active %}⏸ غیرفعال‌سازی{% else %}▶️ فعال‌سازی{% endif %}</button>
+      </form>
+    </div>
+
+    <div class="op-row">
+      <form method="post" action="/admin/super/tenants/{{ t.id }}/reset-password" class="op-row" style="margin:0;"
+            onsubmit="return confirm('رمز ادمین(های) «{{ t.name }}» ریست شود؟');">
+        <label>ریست رمز ادمین:</label>
+        <input type="password" name="new_password" placeholder="رمز جدید (۸+)" required minlength="8">
+        <button class="btn small">ذخیره رمز</button>
+      </form>
+    </div>
+
+    <div class="op-row">
+      <form method="post" action="/admin/super/tenants/{{ t.id }}/domains" class="op-row" style="margin:0;">
+        <label>دامنه‌های مجاز:</label>
+        <input type="text" name="allowed_domains" value="{{ t.domains }}" placeholder="example.com, www.example.com" style="direction:ltr;">
+        <button class="btn small">ذخیره دامنه‌ها</button>
+      </form>
+    </div>
+
+    {# پنل چندنفره فقط حرفه‌ای/کامل؛ گیت سمت سرور هم هست، این فقط فرم را پنهان می‌کند #}
+    {% set tplan = plan_map.get(t.id) %}
+    {% if tplan and tplan.mode in ['advanced'] %}
+    <div class="op-row">
+      <form method="post" action="/admin/super/tenants/{{ t.id }}/add-admin" class="op-row" style="margin:0;">
+        <label>افزودن ادمین:</label>
+        <input type="text" name="admin_username" placeholder="username" style="direction:ltr;" required>
+        <input type="password" name="admin_password" placeholder="رمز (۸+)" minlength="8" required>
+        <button class="btn small">+ ادمین</button>
+      </form>
+    </div>
+    {% else %}
+    <div class="op-row">
+      <span style="font-size:13px;color:#888;">افزودن ادمین دوم: فقط در پلن‌های <b>حرفه‌ای</b> و <b>کامل</b>.</span>
+    </div>
+    {% endif %}
+
+    {% if plans_list %}
+    <div class="op-row">
+      <form method="post" action="/admin/super/tenants/{{ t.id }}/assign-plan" class="op-row" style="margin:0;"
+            autocomplete="off"
+            onsubmit="return confirm('📦 پلن این مشتری تغییر و شمارنده‌ها ریست شود؟');">
+        <label>تخصیص پلن:</label>
+        <select name="plan_id" style="width:auto;padding:6px;font-size:12px;font-family:inherit;">
+          {% set cur_plan_id = plan_map.get(t.id).plan_id if plan_map.get(t.id) else none %}
+          {% for p in plans_list %}
+          <option value="{{ p.id }}"{% if p.id == cur_plan_id %} selected{% endif %}>{{ p.name }}{% if p.id == cur_plan_id %} (فعلی){% endif %} — {{ plan_mode_labels.get(p.mode, p.mode) }}</option>
+          {% endfor %}
+        </select>
+        <button class="btn small">تخصیص (+ریست سقف)</button>
+      </form>
+      <form method="post" action="/admin/super/tenants/{{ t.id }}/reset-quotas"
+            onsubmit="return confirm('🔄 شمارنده‌های پیام و معرفی این مشتری ریست شود؟');">
+        <button class="btn small">🔄 ریست سقف‌ها</button>
+      </form>
+      {# تمدید = ریست شمارنده فقط در پایان دوره. برخلاف «تخصیص»، پلن و
+         سقف اختصاصیِ خریده‌شده دست‌نخورده می‌ماند. #}
+      <form method="post" action="/admin/super/tenants/{{ t.id }}/renew-quotas"
+            onsubmit="return confirm('♻️ سقف‌های ماهانهٔ «{{ t.name }}» تمدید شود؟\nشمارنده‌ها صفر می‌شوند؛ پلن و سقف اختصاصی تغییری نمی‌کنند.');">
+        <button class="btn small">♻️ تمدید سقف‌ها</button>
+      </form>
+    </div>
+    {% endif %}
+
+    {# سقف اختصاصیِ همین مشتری — خالی = ارث از پلن. برخلاف ویرایش پلن،
+       روی بقیهٔ مشتری‌های آن پلن اثر ندارد. #}
+    {% if tplan %}
+    <div class="op-row">
+      <form method="post" action="/admin/super/tenants/{{ t.id }}/quota-override" class="op-row" style="margin:0;flex-wrap:wrap;">
+        <label title="خالی = ارث از پلن">سقف اختصاصی:</label>
+        <input type="number" name="message_quota" min="-1" style="width:110px;font-size:12px;padding:6px;"
+               placeholder="پیام"
+               value="{{ tplan.message_quota_override if tplan.message_quota_override is not none else '' }}">
+        <input type="number" name="introduction_quota" min="-1" style="width:110px;font-size:12px;padding:6px;"
+               placeholder="معرفی"
+               value="{{ tplan.introduction_quota_override if tplan.introduction_quota_override is not none else '' }}">
+        <button class="btn small">ذخیره</button>
+        <span style="font-size:11px;color:#888;">
+          خالی = از پلن ({{ tplan.message_quota }}) · مؤثر: {{ tplan.effective_message_quota }} پیام / {{ tplan.effective_introduction_quota }} معرفی
+          {% if tplan.extra_messages or tplan.extra_introductions %}
+          · اعتبار اضافه: {{ tplan.extra_messages }} پیام + {{ tplan.extra_introductions }} معرفی
+          {% endif %}
+        </span>
+      </form>
+    </div>
+    {% endif %}
+
+    {# پیکربندی LLM اختصاصیِ همین مشتری — درگاه/کلید/مدل. خالی = ارث از پلن.
+       فهرست مدل‌ها زنده از خودِ درگاه خوانده می‌شود، نه از یک لیستِ ثابت. #}
+    {% if tplan and tplan.mode != 'weak' %}
+    {% set llm_cfg = llm_configs.get(t.id, {}) %}
+    <div class="op-row" style="flex-direction:column;align-items:stretch;gap:6px;">
+      {# هر سه فیلد در یک فرم‌اند تا «تست اتصال» مدلی را بفرستد که کاربر
+         همین حالا تایپ کرده — وگرنه مدلِ نادرستِ ارث‌از-پلن تست می‌شد.
+         base_url و کلید برای «ذخیره» در inputهای پنهان کپی می‌شوند. #}
+      <form method="post" action="/admin/super/tenants/{{ t.id }}/llm/test"
+            class="llm-test-form" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0;">
+        <label style="min-width:90px;">درگاه LLM:</label>
+        <input type="text" name="base_url" value="{{ llm_cfg.base_url or llm_cfg.plan_base_url }}"
+               placeholder="https://api.example.com/v1" class="llm-base"
+               style="direction:ltr;width:260px;font-size:12px;padding:6px;border:1px solid #ccc;border-radius:6px;">
+        <input type="password" name="api_key" value="" placeholder="API Key (خالی = بدون تغییر)"
+               class="llm-key" autocomplete="off"
+               style="direction:ltr;width:220px;font-size:12px;padding:6px;border:1px solid #ccc;border-radius:6px;">
+        <button class="btn small" type="button" onclick="fetchModels(this, {{ t.id }})">🔄 دریافت مدل‌ها</button>
+        <input type="text" name="model" list="models-{{ t.id }}"
+               value="{{ llm_cfg.model or llm_cfg.plan_model }}"
+               placeholder="نام مدل را تایپ کنید یا ابتدا «دریافت مدل‌ها» را بزنید" class="llm-model"
+               style="direction:ltr;width:260px;font-size:12px;padding:6px;border:1px solid #ccc;border-radius:6px;">
+        <datalist id="models-{{ t.id }}"></datalist>
+        <button class="btn small" type="submit">🔬 تست اتصال</button>
+      </form>
+
+      <form method="post" action="/admin/super/tenants/{{ t.id }}/llm"
+            class="llm-save-form" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0;">
+        <label style="min-width:90px;">مدل:</label>
+        <input type="hidden" name="model" class="llm-model-src">
+        <input type="hidden" name="base_url" class="llm-base-src">
+        <input type="hidden" name="api_key" class="llm-key-src">
+        <button class="btn small" type="submit" onclick="return fillLlmForm(this.form)">💾 ذخیره</button>
+        <span class="llm-src-hint" style="font-size:11px;color:#888;">
+          {% if llm_cfg.has_key %}کلید ثبت‌شده ✅{% else %}بدون کلید اختصاصی{% endif %}
+        </span>
+      </form>
+
+      <div class="llm-msg" style="font-size:11px;color:#666;min-height:14px;">
+        {% if llm_cfg.source == 'tenant' %}✅ درگاه/کلید/مدلِ اختصاصیِ این مشتری فعال است.
+        {% elif llm_cfg.source == 'partial' %}⚠️ تنظیمات این مشتری ناقص است و از پلن ارث برده می‌شود.
+        {% else %}ℹ️ در حال حاضر از تنظیمات پلن «{{ tplan.plan_name }}» ارث می‌برد — برای تخصیصِ اختصاصی، کلید و مدل را وارد و ذخیره کنید.
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if not plans_list %}
+    <div class="op-row" style="font-size:11px;color:#a33;">
+      ⚠️ هنوز پلنی ساخته نشده — <a href="/admin/super/plans">اول یک پلن بسازید</a> و به مشتری‌ها تخصیص دهید.
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endfor %}
+</div>
+{% if not tenants %}
+<p style="color:#888;">مشتری‌ای ثبت نشده.</p>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script>
+function toggleOps(btn) {
+  var card = btn.closest('.t-card');
+  var ops = card.querySelector('.t-ops');
+  var open = ops.classList.toggle('open');
+  btn.textContent = open ? '✕ بستن' : '⚙️ مدیریت';
+}
+
+// ── پیکربندی LLM هر مشتری ──
+function _llmMsg(card, text, ok) {
+  var el = card.querySelector('.llm-msg');
+  if (!el) return;
+  el.textContent = text;
+  el.style.color = ok === true ? '#1c7a54' : (ok === false ? '#a33' : '#666');
+}
+
+function fetchModels(btn, tenantId) {
+  var card = btn.closest('.t-card');
+  var testForm = card.querySelector('.llm-test-form');
+  var url = testForm.querySelector('[name=base_url]').value.trim();
+  if (!url) {
+    _llmMsg(card, '❌ اول base_url درگاه را وارد کنید.', false);
+    return;
+  }
+  var key = testForm.querySelector('[name=api_key]').value.trim();
+  var was = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '⏳ در حال دریافت...';
+  var done = function (disabled, label) { btn.disabled = disabled; btn.textContent = label; };
+  fetch('/admin/super/tenants/' + tenantId + '/llm/models', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+    body: new URLSearchParams({base_url: url, api_key: key}).toString(),
+    credentials: 'same-origin'
+  }).then(function (r) { return r.json(); }).then(function (d) {
+    done(false, was);
+    if (!d.ok) {
+      _llmMsg(card, '❌ ' + (d.error || 'دریافت مدل‌ها ناموفق بود.'), false);
+      return;
+    }
+    var list = card.querySelector('datalist');
+    var modelInput = card.querySelector('.llm-test-form [name=model]');
+    if (list) {
+      list.innerHTML = '';
+      (d.models || []).forEach(function (m) {
+        var o = document.createElement('option');
+        o.value = m;
+        list.appendChild(o);
+      });
+    }
+    if (!d.models.length) {
+      // خطا نیست: درگاه ممکن است /models نداشته باشد — مدل دستی وارد می‌شود
+      _llmMsg(card, '⚠️ درگاه فهرستی برنگرداند — نام مدل را دستی وارد و ذخیره کنید.', false);
+      return;
+    }
+    if (modelInput) {
+      modelInput.placeholder = 'مدل را از ' + d.models.length + ' گزینه انتخاب کنید (یا تایپ کنید)';
+      if (!modelInput.value) modelInput.focus();
+    }
+    _llmMsg(card, '✅ ' + d.models.length + ' مدل از درگاه دریافت شد.', true);
+  }).catch(function (e) {
+    done(false, was);
+    var tip = (e && e.message === 'Failed to fetch') ? '' :
+      ' (پاسخ سرور قابل خواندن نبود)';
+    _llmMsg(card, '❌ خطای شبکه هنگام دریافت مدل‌ها' + tip + '.', false);
+  });
+}
+
+function fillLlmForm(form) {
+  var card = form.closest('.t-card');
+  var testForm = card.querySelector('.llm-test-form');
+  var base = testForm.querySelector('[name=base_url]').value.trim();
+  var key = testForm.querySelector('[name=api_key]').value.trim();
+  var model = testForm.querySelector('[name=model]').value.trim();
+  if (!base && !model && !key) {
+    return confirm('هر سه فیلد خالی است.\nذخیره یعنی این مشتری کاملاً به تنظیمات پلن برگردد. ادامه می‌دهید؟');
+  }
+  if (!base) {
+    alert('base_url درگاه خالی است. (برای برگشت کامل به پلن، هر سه را خالی بگذارید.)');
+    return false;
+  }
+  if (!model) {
+    alert('نام مدل خالی است. ابتدا «دریافت مدل‌ها» را بزنید یا مدل را تایپ کنید.');
+    return false;
+  }
+  form.querySelector('[name=base_url]').value = base;
+  form.querySelector('[name=api_key]').value = key;
+  form.querySelector('[name=model]').value = model;
+  return true;
+}
+
+function toggleKey(btn) {
+  var span = btn.parentElement.querySelector('.mono');
+  var full = span.getAttribute('data-full');
+  if (btn.textContent === 'نمایش') {
+    span.textContent = full;
+    btn.textContent = 'پنهان';
+  } else {
+    span.textContent = full.slice(0, 8) + '••••••••';
+    btn.textContent = 'نمایش';
+  }
+}
+
+function copyKey(btn) {
+  var span = btn.parentElement.querySelector('.mono');
+  var full = span.getAttribute('data-full');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(full).then(function () {
+      btn.textContent = '✓ کپی شد';
+      setTimeout(function () { btn.textContent = 'کپی'; }, 1500);
+    });
+  } else {
+    var ta = document.createElement('textarea');
+    ta.value = full;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    ta.remove();
+    btn.textContent = '✓ کپی شد';
+    setTimeout(function () { btn.textContent = 'کپی'; }, 1500);
+  }
+}
+
+document.getElementById('tenant-search').addEventListener('input', function () {
+  var q = this.value.trim().toLowerCase();
+  var cards = document.querySelectorAll('#tenant-list .t-card');
+  var shown = 0;
+  cards.forEach(function (c) {
+    var name = (c.getAttribute('data-name') || '').toLowerCase();
+    var slug = (c.getAttribute('data-slug') || '').toLowerCase();
+    var hit = !q || name.indexOf(q) > -1 || slug.indexOf(q) > -1;
+    c.style.display = hit ? '' : 'none';
+    if (hit) shown++;
+  });
+  document.getElementById('tenant-count').textContent = shown + ' از ' + cards.length + ' مشتری';
+});
+document.getElementById('tenant-count').textContent = document.querySelectorAll('#tenant-list .t-card').length + ' مشتری';
+</script>
+{% endblock %}

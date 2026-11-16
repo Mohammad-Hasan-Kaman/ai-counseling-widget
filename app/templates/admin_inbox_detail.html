@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}جزئیات گفتگو{% endblock %}
+{% block nav %}{% include "_nav.html" %}{% endblock %}
+{% block content %}
+<div class="panel">
+  <h2>💬 گفتگوی {{ lead.full_name or 'بازدیدکننده' }} <span style="font-size:11px;color:#888;">{{ created }} ← {{ updated }}</span></h2>
+
+  <div style="max-width:640px;">
+    {% for role, text, created in msgs %}
+    <div class="msg-item {{ 'msg-user' if role == 'user' else 'msg-bot' }}">
+      <div class="meta">{{ 'کاربر' if role == 'user' else 'دستیار' }} — {{ created }}</div>
+      {{ text }}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="panel">
+  <h2>📋 اطلاعات ثبت‌شده</h2>
+  <table style="max-width:640px;">
+    <tr><th>نام مراجع</th><td>{{ lead.full_name or '—' }}</td></tr>
+    {% if lead.relationship %}
+    <tr><th>اطلاعات برای</th><td>{{ lead.relationship }}</td></tr>
+    {% endif %}
+    {% if lead.initiator_name %}
+    <tr><th>ثبت‌کننده</th><td>{{ lead.initiator_name }}</td></tr>
+    {% endif %}
+    <tr><th>شماره</th><td style="direction:ltr;text-align:right;">{{ lead.phone or '—' }}</td></tr>
+    {% if lead.gender %}<tr><th>جنسیت</th><td>{{ lead.gender }}</td></tr>{% endif %}
+    {% if lead.age %}<tr><th>سن</th><td>{{ lead.age }}</td></tr>{% endif %}
+    {% if lead.topic %}<tr><th>موضوع</th><td>{{ lead.topic }}</td></tr>{% endif %}
+    {% if lead.ghq_scores %}
+    <tr><th>GHQ</th><td>جسمانی: {{ lead.ghq_scores.somatic }} | اضطراب: {{ lead.ghq_scores.anxiety }} | اجتماعی: {{ lead.ghq_scores.social }} | افسردگی: {{ lead.ghq_scores.depression }} | کل: {{ lead.ghq_scores.total }}</td></tr>
+    {% endif %}
+  </table>
+</div>
+{% endblock %}

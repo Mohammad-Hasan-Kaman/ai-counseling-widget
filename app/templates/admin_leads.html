@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}درخواست‌ها{% endblock %}
+{% block nav %}{% include "_nav.html" %}{% endblock %}
+{% block content %}
+<div class="panel">
+  <h2>📥 درخواست‌ها <span style="font-size:12px;color:#777;font-weight:400;">({{ total }} مورد)</span></h2>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
+    <a class="btn" href="/admin/export">📊 خروجی اکسل</a>
+    <form method="get" action="/admin/leads" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+      <input type="text" name="q" value="{{ q }}" placeholder="🔍 جستجو در نام، شماره، موضوع..."
+             style="max-width:300px;font-family:inherit;padding:8px;border:1px solid #ccc;border-radius:8px;font-size:13px;">
+      <select name="sort" style="width:auto;padding:8px;font-family:inherit;font-size:13px;border:1px solid #ccc;border-radius:8px;">
+        <option value="created_desc" {% if sort == 'created_desc' %}selected{% endif %}>جدیدترین</option>
+        <option value="created_asc" {% if sort == 'created_asc' %}selected{% endif %}>قدیمی‌ترین</option>
+        <option value="name" {% if sort == 'name' %}selected{% endif %}>نام (الفبا)</option>
+        <option value="age" {% if sort == 'age' %}selected{% endif %}>سن</option>
+      </select>
+      <button class="btn small">اعمال</button>
+      {% if q or sort != 'created_desc' %}<a class="btn small" href="/admin/leads" style="background:#888;">پاک‌سازی</a>{% endif %}
+    </form>
+  </div>
+
+  {% if rows %}
+  <table>
+    <tr><th>نام مراجع</th><th>ثبت‌کننده</th><th>رابطه</th><th>شماره</th><th>جنسیت</th><th>سن</th><th>موضوع</th><th>GHQ</th><th>مرتبه</th><th>مشاوران پیشنهادی</th><th>تاریخ</th></tr>
+    {% for r in rows %}
+    <tr>
+      <td>{{ r.name }}</td>
+      <td>{{ r.initiator or '—' }}</td>
+      <td style="font-size:11px;">{{ r.relationship or '—' }}</td>
+      <td style="direction:ltr;text-align:right;">{{ r.phone }}</td>
+      <td>{{ r.gender or '—' }}</td>
+      <td>{{ r.age or '—' }}</td>
+      <td>{{ r.topic or '—' }}</td>
+      <td>{{ r.ghq if r.ghq is not none else '—' }}</td>
+      <td>{{ r.rn }}</td>
+      <td>{{ r.recs or '—' }}</td>
+      <td style="font-size:11px;color:#888;">{{ r.created }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% if pages > 1 %}
+  <div style="display:flex;gap:8px;align-items:center;margin-top:12px;font-size:13px;">
+    {% if page > 1 %}<a class="btn small" href="/admin/leads?q={{ q|urlencode }}&sort={{ sort }}&page={{ page - 1 }}">قبلی</a>{% endif %}
+    <span style="color:#666;">صفحه {{ page }} از {{ pages }}</span>
+    {% if page < pages %}<a class="btn small" href="/admin/leads?q={{ q|urlencode }}&sort={{ sort }}&page={{ page + 1 }}">بعدی</a>{% endif %}
+  </div>
+  {% endif %}
+  {% else %}
+  <p style="color:#888;font-size:13px;">{% if q %}نتیجه‌ای برای «{{ q }}» یافت نشد.{% else %}هنوز درخواستی ثبت نشده.{% endif %}</p>
+  {% endif %}
+</div>
+{% endblock %}

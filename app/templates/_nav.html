@@ -1,0 +1,16 @@
+{# ناوبری مشترک پنل مشتری — در همهٔ تمپلیت‌های ادمین tenanted استفاده می‌شود.
+   فعال بودن لینک از request.url.path استخراج می‌شود تا از افتادن لینک (مثل
+   «مشاوران» در صفحهٔ درخواست‌ها) جلوگیری شود. can_report از _render می‌آید.
+   nav_extra_href / nav_extra_label: لینک دلخواه انتهایی (مثلاً تغییر رمز). #}
+<nav>
+  {% set p = request.url.path %}
+  <a href="/admin" class="{{ 'active' if p == '/admin' else '' }}">داشبورد</a>
+  <a href="/admin/inbox" class="{{ 'active' if p.startswith('/admin/inbox') else '' }}">گفتگوها</a>
+  <a href="/admin/leads" class="{{ 'active' if p.startswith('/admin/leads') else '' }}">درخواست‌ها</a>
+  <a href="/admin/conflicts" class="{{ 'active' if p.startswith('/admin/conflicts') else '' }}">🔀 تعارض‌ها</a>
+  <a href="/admin/consultants" class="{{ 'active' if p.startswith('/admin/consultants') else '' }}">مشاوران</a>
+  <a href="/admin/branches" class="{{ 'active' if p.startswith('/admin/branches') else '' }}">📍 شعبه‌ها</a>
+  {% if has_plan %}<a href="/admin/topups" class="{{ 'active' if p.startswith('/admin/topups') else '' }}">➕ بستهٔ اضافه</a>{% endif %}
+  {% if can_report %}<a href="/admin/report" class="{{ 'active' if p.startswith('/admin/report') else '' }}">📊 گزارش دوره‌ای</a>{% endif %}
+  {% if nav_extra_href %}<a href="{{ nav_extra_href }}" class="active">{{ nav_extra_label }}</a>{% endif %}
+</nav>

@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}نمونه‌های LLM — سوپر ادمین{% endblock %}
+{% block nav %}
+<nav>
+  <a href="/admin">مشتریان</a>
+  <a href="/admin/super/plans">پلن‌ها</a>
+  <a href="/admin/super/examples" class="active">نمونه‌های LLM</a>
+  <a href="/admin/password">تغییر رمز</a>
+</nav>
+{% endblock %}
+{% block content %}
+{% if flash %}<div class="flash">{{ flash }}</div>{% endif %}
+
+<div class="panel">
+  <h2>🧪 نمونه‌های یادگیری LLM (چرخه: ادمین ثبت → شما تأیید → در پرامپت مچینگ استفاده می‌شود)</h2>
+  <table>
+    <tr><th>#</th><th>مشتری</th><th>متن نمونه</th><th>مشاور تأییدشده</th><th>وضعیت</th><th>ثبت‌کننده</th><th>تاریخ</th><th></th></tr>
+    {% for e in examples %}
+    <tr>
+      <td>{{ e.id }}</td>
+      <td>{{ e.tenant_name }}</td>
+      <td style="font-size:11px;max-width:280px;">{{ e.prompt }}</td>
+      <td>{{ e.corrected }}</td>
+      <td>
+        {% if e.status == 'approved' %}<span class="badge-on">تأیید ✅</span>
+        {% elif e.status == 'rejected' %}<span class="badge-off">رد ❌</span>
+        {% else %}<span style="color:#b8860b;font-weight:700;">در انتظار ⏳</span>{% endif %}
+      </td>
+      <td style="font-size:11px;">{{ e.created_by }}</td>
+      <td style="font-size:11px;color:#888;">{{ e.created_at }}</td>
+      <td style="white-space:nowrap;">
+        {% if e.status != 'approved' %}
+        <form method="post" action="/admin/super/examples/{{ e.id }}/status" style="display:inline;">
+          <input type="hidden" name="status" value="approved">
+          <button class="btn small">✅</button>
+        </form>
+        {% endif %}
+        {% if e.status != 'rejected' %}
+        <form method="post" action="/admin/super/examples/{{ e.id }}/status" style="display:inline;">
+          <input type="hidden" name="status" value="rejected">
+          <button class="btn small" style="background:#8a6d3b;">❌</button>
+        </form>
+        {% endif %}
+        <form method="post" action="/admin/super/examples/{{ e.id }}/delete" style="display:inline;"
+              onsubmit="return confirm('این نمونه حذف شود؟');">
+          <button class="btn small danger">🗑</button>
+        </form>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="8" style="color:#888;">هنوز نمونه‌ای ثبت نشده — بازخوردهای ادمین‌های مشتری‌ها اینجا می‌آیند.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

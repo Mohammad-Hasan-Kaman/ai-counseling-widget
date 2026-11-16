@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}گزارش دوره‌ای{% endblock %}
+{% block nav %}{% include "_nav.html" %}{% endblock %}
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+  <h2 style="font-size:15px;color:#2E5E4E;margin:0;">📊 گزارش دوره‌ای</h2>
+  <div style="display:flex;gap:10px;align-items:center;">
+    <form method="get" action="/admin/report" style="margin:0;">
+      <select name="days" onchange="this.form.submit()" style="width:auto;">
+        {% for d in [7, 30, 90] %}
+        <option value="{{ d }}" {% if rep['days'] == d %}selected{% endif %}>
+          {{ d }} روز اخیر{% if d == 90 %} (ناقص){% endif %}
+        </option>
+        {% endfor %}
+      </select>
+    </form>
+    <a class="btn" href="/admin/report/export?days={{ rep['days'] }}">⬇️ خروجی اکسل</a>
+  </div>
+</div>
+
+<div class="cards" style="margin-top:14px;">
+  <div class="card">
+    <div class="num">{% if rep['partial_conversations'] %}—{% else %}{{ rep['conversations'] }}{% endif %}</div>
+    <div class="lbl">گفتگو</div>
+  </div>
+  <div class="card">
+    <div class="num">{{ rep['leads'] }}</div>
+    <div class="lbl">درخواست (لید)</div>
+  </div>
+  <div class="card">
+    <div class="num">{{ rep['consultations'] }}</div>
+    <div class="lbl">معرفی مشاور</div>
+  </div>
+  <div class="card">
+    <div class="num">{% if rep['ghq_avg'] is none %}—{% else %}{{ rep['ghq_avg'] }}{% endif %}</div>
+    <div class="lbl">میانگین GHQ <span style="color:#999;">({{ rep['ghq_n'] }} نفر)</span></div>
+  </div>
+</div>
+
+{% if rep['partial_conversations'] %}
+<div class="flash" style="background:#fff8e6;border-color:#f0d48a;color:#6b5310;">
+  ⓘ گفتگوها حداکثر {{ rep['retention_days'] }} روز نگهداری می‌شوند؛ برای بازهٔ بلندتر فقط آمار درخواست‌ها، مشاوره و GHQ کامل است. برای آمار کامل گفتگو، بازهٔ ۳۰ روزه را انتخاب کنید.
+</div>
+{% endif %}
+
+<div class="panel">
+  <h2>روند روزانه — درخواست‌ها (به وقت تهران)</h2>
+  {% set peak = rep['daily']['leads'].values() | max if rep['daily']['leads'].values() else 0 %}
+  {% if peak == 0 %}
+  <p style="font-size:13px;color:#888;">در این بازه درخواستی ثبت نشده است.</p>
+  {% else %}
+  <div style="display:flex;align-items:flex-end;gap:2px;height:110px;overflow-x:auto;padding-bottom:4px;">
+    {% for d in rep['axis'] %}
+    {% set n = rep['daily']['leads'][d] %}
+    <div title="{{ d }} — {{ n }} درخواست"
+         style="flex:1;min-width:7px;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:3px;">
+      {% if n %}<span style="font-size:9px;color:#2E5E4E;">{{ n }}</span>{% endif %}
+      <div style="width:100%;background:#2E5E4E;border-radius:3px 3px 0 0;
+                  height:{{ (n / peak * 90) | round | int }}px;
+                  min-height:{{ 2 if n else 0 }}px;"></div>
+    </div>
+    {% endfor %}
+  </div>
+  <p style="font-size:11px;color:#888;margin-top:6px;">
+    از {{ rep['axis'][0] }} تا {{ rep['axis'][-1] }} (به وقت تهران) — بیشترین: {{ peak }}
+  </p>
+  {% endif %}
+</div>
+
+<div class="panel">
+  <h2>مشاوران برتر — {{ rep['days'] }} روز اخیر</h2>
+  {% if rep['top_consultants'] %}
+  <table>
+    <tr><th>مشاور</th><th style="width:110px;">تعداد معرفی</th></tr>
+    {% for c in rep['top_consultants'] %}
+    <tr><td>{{ c.name }}</td><td>{{ c.count }}</td></tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p style="font-size:13px;color:#888;">در این بازه مشاوری معرفی نشده است.</p>
+  {% endif %}
+</div>
+
+<div class="panel">
+  <h2>موضوعات پرتکرار</h2>
+  {% if rep['top_topics'] %}
+  <table>
+    <tr><th>موضوع</th><th style="width:110px;">تعداد</th></tr>
+    {% for t in rep['top_topics'] %}
+    <tr><td>{{ t.name }}</td><td>{{ t.count }}</td></tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p style="font-size:13px;color:#888;">در این بازه موضوعی ثبت نشده است.</p>
+  {% endif %}
+</div>
+{% endblock %}

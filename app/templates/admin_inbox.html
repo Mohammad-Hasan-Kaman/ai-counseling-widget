@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}گفتگوها{% endblock %}
+{% block nav %}{% include "_nav.html" %}{% endblock %}
+{% block content %}
+<div class="panel">
+  <h2>💬 گفتگوها <span style="font-size:12px;color:#777;font-weight:400;">({{ total }} مورد)</span></h2>
+  <form method="get" action="/admin/inbox" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
+    <input type="text" name="q" value="{{ q }}" placeholder="🔍 جستجو در نام، شماره یا متن پیام‌ها..."
+           style="max-width:340px;font-family:inherit;padding:8px;border:1px solid #ccc;border-radius:8px;font-size:13px;">
+    <select name="sort" style="width:auto;padding:8px;font-family:inherit;font-size:13px;border:1px solid #ccc;border-radius:8px;">
+      <option value="updated_desc" {% if sort == 'updated_desc' %}selected{% endif %}>جدیدترین فعالیت</option>
+      <option value="updated_asc" {% if sort == 'updated_asc' %}selected{% endif %}>قدیمی‌ترین فعالیت</option>
+      <option value="name" {% if sort == 'name' %}selected{% endif %}>نام (الفبا)</option>
+    </select>
+    <button class="btn small">اعمال</button>
+    {% if q or sort != 'updated_desc' %}<a class="btn small" href="/admin/inbox" style="background:#888;">پاک‌سازی</a>{% endif %}
+  </form>
+
+  {% if chats %}
+  <table>
+    <tr><th>نام</th><th>شماره</th><th>رابطه</th><th>وضعیت</th><th>آخرین پیام</th><th>تعداد پیام</th><th>آخرین فعالیت</th><th></th></tr>
+    {% for c in chats %}
+    <tr>
+      <td>{{ c.name }}{% if c.initiator and c.relationship and c.relationship != 'برای خودم' %}
+        <div style="font-size:10px;color:#888;">ثبت‌کننده: {{ c.initiator }}</div>{% endif %}</td>
+      <td style="direction:ltr;text-align:right;">{{ c.phone or '—' }}</td>
+      <td style="font-size:11px;">{{ c.relationship or '—' }}</td>
+      <td>{{ c.state_label }}{% if c.expired %}<div style="font-size:10px;color:#a66;">منقضی (فقط مشاهده)</div>{% endif %}</td>
+      <td>{{ c.last_msg }}</td>
+      <td>{{ c.msg_count }}</td>
+      <td style="font-size:11px;color:#888;">{{ c.updated }}</td>
+      <td><a class="btn small" href="/admin/inbox/{{ c.token }}">مشاهده</a></td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% if pages > 1 %}
+  <div style="display:flex;gap:8px;align-items:center;margin-top:12px;font-size:13px;">
+    {% if page > 1 %}<a class="btn small" href="/admin/inbox?q={{ q|urlencode }}&sort={{ sort }}&page={{ page - 1 }}">قبلی</a>{% endif %}
+    <span style="color:#666;">صفحه {{ page }} از {{ pages }}</span>
+    {% if page < pages %}<a class="btn small" href="/admin/inbox?q={{ q|urlencode }}&sort={{ sort }}&page={{ page + 1 }}">بعدی</a>{% endif %}
+  </div>
+  {% endif %}
+  {% else %}
+  <p style="color:#888;font-size:13px;">{% if q %}نتیجه‌ای برای «{{ q }}» یافت نشد.{% else %}هنوز گفتگویی ثبت نشده.{% endif %}</p>
+  {% endif %}
+</div>
+{% endblock %}
