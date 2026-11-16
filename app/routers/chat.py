@@ -16,7 +16,7 @@ from app.ratelimit import client_ip, rate_ok
 router = APIRouter(prefix="/api/chat", tags=["chat"])
 
 # ── Rate limit: 30 درخواست در دقیقه به‌ازای IP (دیتابیس‌محور، XFF-aware) ──
-_RATE_LIMIT = 30
+_RATE_LIMIT = 60
 _RATE_WINDOW = 60
 
 # قفلِ نشست: دو پیام همزمانِ یک توکن نباید session را موازی بخوانند/بنویسند
