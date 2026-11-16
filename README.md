@@ -6,10 +6,11 @@ the GHQ-28 questionnaire, and matches them with the most suitable counselor —
 with subscription plans, usage quotas, and optional per-plan LLM assistance
 built in.
 
-This is the commercial edition of the open-core
-[ai-counseling-widget](https://github.com/Mohammad-Hasan-Kaman/ai-counseling-widget)
-(v1). The intake flow, GHQ-28 scoring, and the matching engine are the same
-core; v2 adds the business layer that turns it into a hosted product.
+This is v2 of the ai-counseling-widget. The intake flow, GHQ-28 scoring,
+and the matching engine are the same core as v1 (still available under the
+`v1.0.0` tag and release); v2 adds the business layer that turns it into a
+hosted product: subscription plans, usage quotas, and per-plan LLM
+assistance.
 
 ## What it does
 
@@ -77,7 +78,7 @@ Visitors chat with the widget instead of filling a form:
 
 ## How v2 differs from v1
 
-| Area | v1 (open core) | v2 (this repo) |
+| Area | v1 | v2 (current) |
 | --- | --- | --- |
 | AI | Local rule engine only | Rule engine + optional per-plan LLM (3 modes, fallback) |
 | Business model | None | Plans, monthly quotas, metering, top-ups, upgrades |
