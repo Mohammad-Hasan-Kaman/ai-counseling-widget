@@ -90,7 +90,7 @@ Visitors chat with the widget instead of filling a form:
 ## Quick start
 
 ```bash
-git clone <this repo> && cd ai-counseling-widget-v2
+git clone <this repo> && cd ai-counseling-widget
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 

@@ -38,7 +38,7 @@ SUBSCALES = {
 # آستانه‌های بالینی — تنها منبع حقیقت (قبلاً در ۴ فایل پراکنده و ناهماهنگ بود)
 GHQ_SEVERE_TOTAL = 43          # خطر بالا: نمره کل
 GHQ_SEVERE_DEPRESSION = 15     # خطر بالا: زیرمقیاس افسردگی
-GHQ_ELEVATED_TOTAL = 22        # «در معرض آسیب» در پیام نتیجه + برچسب «متوسط» در خروجی اکسل
+GHQ_ELEVATED_TOTAL = 24        # «در معرض آسیب» در پیام نتیجه + برچسب «متوسط» در خروجی اکسل
 
 def calculate_ghq_scores(answers):
     scores = {}

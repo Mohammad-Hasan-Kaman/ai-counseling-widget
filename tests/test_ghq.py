@@ -38,15 +38,16 @@ def test_message_low_risk():
     assert "توجه تخصصی" not in msg
 
 
-def test_message_medium_risk_total_22():
-    # ۲۲ نمره کل، بدون عبور از آستانه شدید
+def test_message_medium_risk_total_24():
+    # ۲۴ نمره کل — دقیقاً روی آستانهٔ «در معرض آسیب»، بدون عبور از آستانه شدید
     answers = [0] * 28
     answers[0:8] = [1] * 8
     answers[8:15] = [1] * 7
-    answers[15:21] = [1] * 6  # total = 21? → adjust
-    answers[21] = 1
+    answers[15:21] = [1] * 6
+    answers[21:24] = [1] * 3  # total = 24
     scores = calculate_ghq_scores(answers)
-    assert scores["total"] >= 22
+    assert scores["total"] == 24
+    assert scores["total"] >= 24
     assert scores["total"] < 43
     assert scores["depression"] < 15
     msg = get_ghq_message(scores)
