@@ -1,3 +1,5 @@
+![ai-counseling-widget banner](assets/banner.jpg)
+
 # AI Counseling Widget v2 — Multi-Tenant SaaS Edition
 
 A multi-tenant, Persian (RTL) counseling-triage platform: an embeddable chat
