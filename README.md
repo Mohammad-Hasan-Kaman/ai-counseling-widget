@@ -2,6 +2,8 @@
 
 # AI Counseling Widget v2 — Multi-Tenant SaaS Edition
 
+**Project page:** [AI Counseling Widget on mhkaman.com](https://mhkaman.com/en/projects/ai-counseling-widget/)
+
 A multi-tenant, Persian (RTL) counseling-triage platform: an embeddable chat
 widget that walks a visitor through a guided intake conversation, administers
 the GHQ-28 questionnaire, and matches them with the most suitable counselor —
