@@ -5,72 +5,90 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>قیمت‌گذاری — دستیار پذیرش هوشمند</title>
 <style>
-  :root { --green: #2E5E4E; --green2: #3e7a63; --gold: #d4a94e; }
+  /* سیستم طراحی (بازطراحی ۲۰۲۶-۱۱-۲۵): کاغذ گرم، جوهر، یک لهجهٔ سبزِ برند.
+     پلن استاندارد با نوار سبز مشخص شده، چون پلن کاملِ هوش مصنوعی برای
+     بیشتر مراکز است و باید در یک نگاه پیدا شود. */
+  :root {
+    --paper: #faf9f5; --surface: #fff; --ink: #20241f; --ink2: #4c534c;
+    --muted: #6d7268; --line: #e4e2d9; --green: #2E5E4E; --green-deep: #24493c;
+    --tint: #eef3f0;
+  }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: Vazirmatn, Tahoma, sans-serif; background: #fff; color: #222; }
-  nav { position: sticky; top: 0; z-index: 100; background: rgba(255,255,255,.95); backdrop-filter: blur(8px); border-bottom: 1px solid #eee; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; }
-  nav .logo { color: var(--green); font-weight: 800; font-size: 17px; text-decoration: none; }
-  nav .links a { color: #555; text-decoration: none; margin-inline-start: 20px; font-size: 13px; }
-  nav .links a:hover, nav .links a.active { color: var(--green); font-weight: 700; }
-  .btn { background: var(--green); color: #fff; border: none; padding: 12px 30px; border-radius: 30px; cursor: pointer; font-family: inherit; font-size: 14px; font-weight: 700; text-decoration: none; display: inline-block; box-shadow: 0 6px 20px rgba(46,94,78,.3); transition: transform .15s; }
-  .btn:hover { transform: translateY(-2px); background: #254c3f; }
-  .btn.ghost { background: transparent; color: var(--green); border: 2px solid var(--green); box-shadow: none; }
-  .btn.gold { background: var(--gold); box-shadow: 0 6px 20px rgba(212,169,78,.35); }
-  .btn.gold:hover { background: #c29a3f; }
-  .hero { background: linear-gradient(135deg, var(--green), var(--green2) 60%, #4d9379); color: #fff; padding: 70px 24px 90px; text-align: center; position: relative; overflow: hidden; }
-  .hero::after { content: ""; position: absolute; bottom: -60px; left: -10%; right: -10%; height: 120px; background: #fff; border-radius: 50% 50% 0 0; }
-  .hero .badge { display: inline-block; background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.35); border-radius: 20px; padding: 5px 18px; font-size: 13px; margin-bottom: 18px; }
-  .hero h1 { font-size: clamp(24px, 4.5vw, 38px); margin-bottom: 14px; line-height: 1.5; position: relative; z-index: 2; }
-  .hero p { opacity: .92; font-size: 15px; max-width: 660px; margin: 0 auto; line-height: 2; position: relative; z-index: 2; }
-  section { max-width: 1060px; margin: 0 auto; padding: 30px 24px 20px; }
-  section h2 { color: var(--green); font-size: 22px; text-align: center; margin: 40px 0 8px; }
-  section .sub { color: #777; text-align: center; font-size: 14px; margin-bottom: 34px; }
-  .plans { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; align-items: stretch; }
-  @media (min-width: 900px) { .plans { grid-template-columns: repeat(4, 1fr); } }
-  .plan { background: #f7faf8; border: 1px solid #e3ece8; border-radius: 18px; padding: 24px 20px; display: flex; flex-direction: column; position: relative; transition: transform .15s, box-shadow .15s; }
-  .plan:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(46,94,78,.12); }
-  .plan.popular { border: 2px solid var(--gold); background: #fffdf6; }
-  .plan .tag { position: absolute; top: -13px; right: 22px; background: var(--gold); color: #fff; font-size: 11px; font-weight: 700; border-radius: 12px; padding: 4px 14px; }
-  .plan h3 { color: var(--green); font-size: 17px; margin-bottom: 6px; }
-  .plan .mode { font-size: 12.5px; color: #666; min-height: 54px; line-height: 1.8; }
-  .plan .price { font-size: 17px; font-weight: 800; color: #222; margin: 8px 0 2px; }
-  .plan .price small { font-size: 11px; font-weight: 400; color: #888; }
-  .plan .quota { display: flex; gap: 8px; margin: 12px 0; }
-  .plan .quota div { flex: 1; background: #fff; border: 1px solid #e3ece8; border-radius: 10px; padding: 8px 6px; text-align: center; }
-  .plan .quota .n { font-size: 16px; font-weight: 800; color: var(--green); }
-  .plan .quota .l { font-size: 10px; color: #777; margin-top: 2px; }
-  .plan ul { list-style: none; margin: 6px 0 20px; flex: 1; }
-  .plan li { font-size: 13px; line-height: 2.05; color: #333; padding-right: 22px; position: relative; }
-  .plan li::before { content: "✓"; position: absolute; right: 0; color: var(--green); font-weight: 800; }
-  .plan li.head { font-weight: 700; color: var(--green); padding-right: 0; margin-top: 10px; font-size: 12.5px; }
+  body { font-family: Vazirmatn, Tahoma, sans-serif; background: var(--paper); color: var(--ink); }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+  nav { position: sticky; top: 0; z-index: 100; background: var(--paper); border-bottom: 1px solid var(--line); padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; }
+  nav .logo { color: var(--ink); font-weight: 700; font-size: 16px; text-decoration: none; display: flex; align-items: center; gap: 8px; }
+  nav .links a { color: var(--ink2); text-decoration: none; margin-inline-start: 22px; font-size: 13.5px; }
+  nav .links a:hover, nav .links a.active { color: var(--green); font-weight: 600; }
+  .btn { background: var(--green); color: #fff; border: 1px solid var(--green); padding: 11px 22px; border-radius: 10px; cursor: pointer; font-family: inherit; font-size: 13.5px; font-weight: 600; text-decoration: none; display: inline-block; text-align: center; transition: background .15s ease; }
+  .btn:hover { background: var(--green-deep); }
+  .btn.ghost { background: transparent; color: var(--green); }
+  .btn.ghost:hover { background: var(--tint); }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+  .phead { padding: 52px 0 8px; max-width: 720px; }
+  .phead h1 { font-size: clamp(25px, 4vw, 36px); line-height: 1.45; font-weight: 700; margin-bottom: 14px; }
+  .phead p { font-size: 15px; line-height: 2.05; color: var(--ink2); }
+
+  section { padding: 34px 0 8px; }
+  section h2 { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+  section .sub { color: var(--muted); font-size: 13.5px; line-height: 2; margin-bottom: 30px; }
+
+  .billing-toggle { display: flex; gap: 0; margin: 26px 0 30px; background: var(--tint); border: 1px solid var(--line); border-radius: 10px; padding: 4px; width: fit-content; }
+  .billing-toggle button { border: none; background: transparent; font-family: inherit; font-size: 13px; font-weight: 600; color: var(--ink2); padding: 8px 22px; border-radius: 8px; cursor: pointer; }
+  .billing-toggle button.on { background: var(--green); color: #fff; }
+  .billing-toggle button .save { font-size: 11px; margin-inline-start: 5px; font-weight: 700; }
+
+  .plans { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 18px; align-items: stretch; }
+  @media (min-width: 900px) { .plans { grid-template-columns: repeat(3, 1fr); } }
+  .plan { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 26px 22px; display: flex; flex-direction: column; }
+  .plan.flagship { border: 1.5px solid var(--green); }
+  .plan .flag { font-size: 12px; font-weight: 700; color: var(--green); margin-bottom: 10px; }
+  .plan h3 { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+  .plan .mode { font-size: 13px; color: var(--ink2); min-height: 56px; line-height: 1.95; }
+  .plan .price { font-size: 19px; font-weight: 700; margin: 10px 0 2px; font-variant-numeric: tabular-nums; }
+  .plan .price small { font-size: 11.5px; font-weight: 400; color: var(--muted); }
+  .plan .price.contact { font-size: 17px; color: var(--green); }
+  .plan .quota { display: flex; gap: 8px; margin: 14px 0; }
+  .plan .quota div { flex: 1; border: 1px solid var(--line); border-radius: 10px; padding: 9px 6px; text-align: center; }
+  .plan .quota .n { font-size: 16px; font-weight: 700; color: var(--green); font-variant-numeric: tabular-nums; }
+  .plan .quota .l { font-size: 10.5px; color: var(--muted); margin-top: 2px; }
+  .plan ul { list-style: none; margin: 6px 0 22px; flex: 1; }
+  .plan li { font-size: 13px; line-height: 2.05; color: var(--ink2); padding-inline-start: 20px; position: relative; }
+  .plan li::before { content: "✓"; position: absolute; inset-inline-start: 0; color: var(--green); font-weight: 700; }
+  .plan li.head { font-weight: 700; color: var(--ink); padding-inline-start: 0; margin-top: 12px; font-size: 12.5px; }
   .plan li.head::before { content: ""; }
-  .plan li.no { color: #aaa; }
-  .plan li.no::before { content: "—"; color: #ccc; }
-  .plan .btn { text-align: center; font-size: 13px; padding: 11px 14px; }
-  table.compare { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
-  table.compare th, table.compare td { border: 1px solid #e3ece8; padding: 10px; text-align: center; }
-  table.compare th { background: #f0f4f2; color: var(--green); font-size: 12.5px; }
+  .plan li.no { color: var(--muted); }
+  .plan li.no::before { content: "—"; color: #c6c9bd; }
+
+  .bale { background: var(--green-deep); color: #eef3f0; border-radius: 14px; padding: 28px; margin-top: 40px; display: flex; gap: 22px; align-items: center; flex-wrap: wrap; }
+  .bale h3 { font-size: 17px; margin-bottom: 8px; color: #fff; }
+  .bale p { font-size: 13.5px; opacity: .92; line-height: 2.05; flex: 1; min-width: 240px; }
+  .bale .only { font-size: 12.5px; font-weight: 700; color: #fff; border: 1px solid rgba(255,255,255,.45); border-radius: 8px; padding: 7px 14px; white-space: nowrap; }
+
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+  table.compare { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 560px; }
+  table.compare th, table.compare td { padding: 11px 12px; text-align: center; border-bottom: 1px solid var(--line); }
+  table.compare tr:last-child td { border-bottom: none; }
+  table.compare th { background: var(--tint); color: var(--ink); font-size: 13px; }
   table.compare td:first-child, table.compare th:first-child { text-align: right; font-weight: 600; }
-  .bale { background: linear-gradient(135deg, #1a3a5c, #2d6a9f); color: #fff; border-radius: 18px; padding: 26px; margin-top: 34px; display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
-  .bale .ico { font-size: 40px; }
-  .bale h3 { font-size: 17px; margin-bottom: 6px; }
-  .bale p { font-size: 13px; opacity: .9; line-height: 2; flex: 1; min-width: 240px; }
-  .bale .pill { background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.35); border-radius: 14px; padding: 6px 14px; font-size: 12px; font-weight: 700; }
-  .billing-toggle { display: flex; justify-content: center; gap: 0; margin: -18px auto 28px; background: #eef3f1; border-radius: 30px; padding: 4px; width: fit-content; }
-  .billing-toggle button { border: none; background: transparent; font-family: inherit; font-size: 13px; font-weight: 700; color: #555; padding: 9px 22px; border-radius: 26px; cursor: pointer; }
-  .billing-toggle button.on { background: var(--green); color: #fff; box-shadow: 0 3px 10px rgba(46,94,78,.3); }
-  .billing-toggle button .save { font-size: 11px; color: var(--gold); margin-inline-start: 4px; font-weight: 800; }
-  .billing-toggle button.on .save { color: #ffe9b0; }
-  .plan .price .amount { font-size: 18px; }
-  .note { background: #fff8e6; border: 1.5px solid #f0d48a; border-radius: 16px; padding: 22px; text-align: center; margin-top: 34px; font-size: 13px; color: #6b5310; line-height: 2.1; }
-  footer { background: var(--green); color: #cfe0d8; text-align: center; padding: 34px 20px; margin-top: 60px; font-size: 13px; line-height: 2; }
+  table.compare td { color: var(--ink2); }
+  table.compare td b { color: var(--ink); }
+
+  .note { border: 1px solid var(--line); border-inline-start: 3px solid var(--green); background: var(--surface); border-radius: 12px; padding: 24px 26px; margin-top: 22px; font-size: 13.5px; color: var(--ink2); line-height: 2.1; }
+  .note b { color: var(--ink); }
+  footer { background: var(--green-deep); color: #cfe0d8; text-align: center; padding: 36px 20px; margin-top: 72px; font-size: 13px; line-height: 2.1; }
   footer a { color: #fff; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 </style>
 </head>
 <body>
 
 <nav>
-  <a class="logo" href="/">🌿 دستیار پذیرش هوشمند</a>
+  <a class="logo" href="/">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 21c-4.5-2.6-7-6.6-7-11.2C5 5.6 7.6 3 11 3c.4 4.9 2.3 8.3 6.5 10.4C15.6 17 14 19.3 12 21Z" fill="#2E5E4E"/><path d="M12 21c.6-5.4 2.8-9.9 7-13" stroke="#2E5E4E" stroke-width="1.6" stroke-linecap="round"/></svg>
+    دستیار پذیرش هوشمند
+  </a>
   <div class="links">
     <a href="/#features">امکانات</a>
     <a href="/#how">نحوه کار</a>
@@ -79,158 +97,140 @@
   </div>
 </nav>
 
-<div class="hero">
-  <div class="badge">💎 چهار پلن شفاف — از بدون AI تا AI خودتان</div>
-  <h1>چهار پلن، سه مدل هوش مصنوعی،<br>قیمت منطقی</h1>
-  <p>هر پلن یک سطح بالاتر از قبلی: پایه بدون AI · استاندارد با مدل عمومی ما (کیفیت کمتر) · حرفه‌ای با دیپ‌سیک · کامل با هر مدلی که بخواهید + ربات بله.</p>
-</div>
-
-<section>
-  <h2>پلن‌های اشتراکی</h2>
-  <p class="sub">سقف معرفی مشاور: ۳۰ · ۵۰ · ۸۰ · سفارشی — سه نوع هوش مصنوعی: مدل عمومی ما · دیپ‌سیک · هر مدلی که بخواهید</p>
-  <div class="billing-toggle" id="billing-toggle">
-    <button type="button" class="on" data-mode="m">ماهانه</button>
-    <button type="button" data-mode="y">سالانه<span class="save">۲ ماه رایگان</span></button>
+<main class="wrap">
+  <div class="phead">
+    <h1>سه پلن، از بدون هوش مصنوعی تا مدل دلخواه شما</h1>
+    <p>پایه بدون هوش مصنوعی کار می‌کند. استاندارد مدل دیپ‌سیک دارد. حرفه‌ای با هر مدلی که بخواهید کار می‌کند و ربات بله هم دارد. سقف معرفی مشاور در ماه: پایه ۳۰، استاندارد ۸۰، حرفه‌ای سفارشی.</p>
   </div>
 
-  <div class="plans">
+  <section>
+    <h2>پلن‌های اشتراکی</h2>
+    <div class="billing-toggle" id="billing-toggle">
+      <button type="button" class="on" data-mode="m">ماهانه</button>
+      <button type="button" data-mode="y">سالانه<span class="save">۲ ماه رایگان</span></button>
+    </div>
 
-    <div class="plan">
-      <h3>۱. پایه</h3>
-      <div class="mode">چت خودکار با سؤالات آماده + معرفی مشاور با موتور قاعده‌ای — بدون هوش مصنوعی، برای شروع ارزان</div>
-      <div class="price" data-m="۹۸۰٬۰۰۰" data-y="۹٬۸۰۰٬۰۰۰"><span class="amount">۹۸۰٬۰۰۰</span> <small class="period">تومان / ماه</small></div>
-      <div class="quota">
-        <div><div class="n">۳۰</div><div class="l">معرفی مشاور / ماه</div></div>
-        <div><div class="n">—</div><div class="l">هوش مصنوعی ندارد</div></div>
+    <div class="plans">
+
+      <div class="plan">
+        <h3>۱. پایه</h3>
+        <div class="mode">چت خودکار با سؤالات آماده و معرفی مشاور با موتور قاعده‌ای، بدون هوش مصنوعی. برای شروعی کم‌هزینه.</div>
+        <div class="price" data-m="۱٬۹۶۰٬۰۰۰" data-y="۱۹٬۶۰۰٬۰۰۰"><span class="amount">۱٬۹۶۰٬۰۰۰</span> <small class="period">تومان / ماه</small></div>
+        <div class="quota">
+          <div><div class="n">۳۰</div><div class="l">معرفی مشاور / ماه</div></div>
+          <div><div class="n">—</div><div class="l">هوش مصنوعی ندارد</div></div>
+        </div>
+        <ul>
+          <li class="head">مناسب مراکزی که:</li>
+          <li>فقط می‌خواهند شماره و مشکل مراجع را سریع و منظم جمع کنند</li>
+          <li class="head">این پلن چه دارد:</li>
+          <li>دکمه چت ۲۴ ساعته در گوشه سایت، با نصب یک خط کد</li>
+          <li><b>معرفی خودکار دو مشاور با موتور قاعده‌ای</b>، بر اساس موضوع، سن، جنسیت و شعبه</li>
+          <li>سؤالات آماده و ثبت برای فرزند، خانواده یا دوست</li>
+          <li>پنل مدیریت مراجعان: فهرست، جستجو و خروجی اکسل مراجعان سایت شما</li>
+          <li>آزمون GHQ-28، اطلاعیه و ویرایش سؤالات گفتگو</li>
+          <li class="no">ندارد: هوش مصنوعی، فهم زبان آزاد مراجع، یادگیری از بازخورد</li>
+        </ul>
+        <a class="btn ghost" href="/#how">شروع پایه</a>
       </div>
-      <ul>
-        <li class="head">مناسب مراکزی که…</li>
-        <li>فقط می‌خواهند شماره و مشکل مراجع را سریع و منظم جمع کنند</li>
-        <li class="head">این پلن چه دارد:</li>
-        <li>دکمه چت ۲۴ ساعته در گوشه سایت (نصب با ۱ خط کد)</li>
-        <li><b>معرفی خودکار دو مشاور با موتور قاعده‌ای</b> — بر اساس موضوع، سن، جنسیت و شعبه</li>
-        <li>سؤالات آماده + ثبت برای فرزند/خانواده/دوست</li>
-        <li>پنل مدیریتِ مراجعان (فهرست، جستجو و خروجی اکسلِ مراجعانِ سایتِ شما)</li>
-        <li>آزمون GHQ-28 + اطلاعیه + ویرایش سؤالات گفتگو</li>
-        <li class="no">ندارد: هوش مصنوعی، فهم زبان آزاد مراجع، یادگیری از بازخورد</li>
-      </ul>
-      <a class="btn ghost" href="/#how">شروع پایه</a>
-    </div>
 
-    <div class="plan popular">
-      <div class="tag">مدل عمومی ما</div>
-      <h3>۲. استاندارد (مدل عمومی)</h3>
-      <div class="mode">یک مدل هوش مصنوعی عمومی که ما انتخاب کرده‌ایم (کیفیت کمتری ارائه می‌دهد) — شما فقط اشتراک می‌دهید</div>
-      <div class="price" data-m="۲٬۵۸۰٬۰۰۰" data-y="۲۵٬۸۰۰٬۰۰۰"><span class="amount">۲٬۵۸۰٬۰۰۰</span> <small class="period">تومان / ماه</small></div>
-      <div class="quota">
-        <div><div class="n">۵۰</div><div class="l">معرفی مشاور / ماه</div></div>
-        <div><div class="n">۵۰۰</div><div class="l">پیام هوشمند / ماه</div></div>
+      <div class="plan flagship">
+        <div class="flag">پیشنهاد ما برای بیشتر مراکز</div>
+        <h3>۲. استاندارد (دیپ‌سیک)</h3>
+        <div class="mode">مدل هوش مصنوعی دیپ‌سیک: گفت‌وگوی طبیعی فارسی، پیام هوشمند و معرفی بیشتر. شما فقط اشتراک می‌دهید و نگران هزینه لحظه‌ای API نیستید.</div>
+        <div class="price" data-m="۴٬۹۸۰٬۰۰۰" data-y="۴۹٬۸۰۰٬۰۰۰"><span class="amount">۴٬۹۸۰٬۰۰۰</span> <small class="period">تومان / ماه</small></div>
+        <div class="quota">
+          <div><div class="n">۸۰</div><div class="l">معرفی مشاور / ماه</div></div>
+          <div><div class="n">۱٬۵۰۰</div><div class="l">پیام هوشمند / ماه</div></div>
+        </div>
+        <ul>
+          <li class="head">مناسب مراکزی که:</li>
+          <li>هوش مصنوعی کامل می‌خواهند، با سقف ماهانه روشن و بدون صورتحساب لحظه‌ای</li>
+          <li class="head">به پایه اضافه می‌شود:</li>
+          <li><b>مدل هوش مصنوعی دیپ‌سیک</b>، با ۱٬۵۰۰ پیام هوشمند در ماه</li>
+          <li><b>جواب طبیعی و صمیمی فارسی</b>، مثل یک منشی واقعی</li>
+          <li><b>هر جمله‌ای را می‌فهمد</b>، مثل «۲۳ سالمه» یا «استرس شدید»</li>
+          <li><b>معرفی خودکار بهترین مشاور با دلیل</b></li>
+          <li><b>ادامه خودکار چت در قطعی هوش مصنوعی</b>، پذیرش هیچ‌وقت نمی‌ایستد</li>
+          <li>از بازخورد کارکنان شما یاد می‌گیرد</li>
+          <li><b>پنل چندنفره</b>، افزودن ادمین دوم و بیشتر برای تیم پذیرش</li>
+          <li>پشتیبانی با اولویت</li>
+          <li class="no">ندارد: ربات بله و انتخاب آزاد مدل هوش مصنوعی</li>
+        </ul>
+        <a class="btn" href="/#how">شروع استاندارد</a>
       </div>
-      <ul>
-        <li class="head">مناسب مراکزی که…</li>
-        <li>می‌خواهند هوش مصنوعی داشته باشند بدون نگرانی از هزینه لحظه‌ای API</li>
-        <li class="head">به پایه اضافه می‌شود (پرش بزرگ):</li>
-        <li><b>مدل هوش مصنوعی را ما انتخاب می‌کنیم</b> (یک مدل عمومی — کیفیت کمتری ارائه می‌دهد) — شما فقط ۵۰۰ پیام در ماه</li>
-        <li><b>جواب طبیعی و صمیمی فارسی</b> — مثل یک منشی واقعی</li>
-        <li><b>هر جمله‌ای را می‌فهمد</b> — «۲۳ سالمه»، «استرس شدید»</li>
-        <li><b>معرفی خودکار بهترین مشاور با دلیل</b></li>
-        <li class="no">ندارد: ادامه خودکار در قطعی AI · ربات بله</li>
-      </ul>
-      <a class="btn" href="/#how">شروع استاندارد</a>
-    </div>
 
-    <div class="plan">
-      <h3>۳. حرفه‌ای (دیپ‌سیک)</h3>
-      <div class="mode">مدل هوش مصنوعی دیپ‌سیک — اشتراک بیشتر + پیام‌های هوشمند بیشتر</div>
-      <div class="price" data-m="۴٬۹۸۰٬۰۰۰" data-y="۴۹٬۸۰۰٬۰۰۰"><span class="amount">۴٬۹۸۰٬۰۰۰</span> <small class="period">تومان / ماه</small></div>
-      <div class="quota">
-        <div><div class="n">۸۰</div><div class="l">معرفی مشاور / ماه</div></div>
-        <div><div class="n">۱٬۵۰۰</div><div class="l">پیام هوشمند / ماه</div></div>
+      <div class="plan">
+        <h3>۳. حرفه‌ای (مدل دلخواه و بله)</h3>
+        <div class="mode">با هر مدل هوش مصنوعی که بخواهید، به همراه ربات اختصاصی بله و آموزش تیم. بدون سقف پیام هوشمند.</div>
+        <div class="price contact">تماس بگیرید <small>قیمت سفارشی</small></div>
+        <div class="quota">
+          <div><div class="n">سفارشی</div><div class="l">معرفی مشاور / ماه</div></div>
+          <div><div class="n">نامحدود</div><div class="l">پیام هوشمند / ماه</div></div>
+        </div>
+        <ul>
+          <li class="head">مناسب مراکزی که:</li>
+          <li>می‌خواهند مدل هوش مصنوعی را خودشان انتخاب کنند و کنترل کامل هزینه را داشته باشند</li>
+          <li class="head">به استاندارد اضافه می‌شود:</li>
+          <li><b>با هر مدل هوش مصنوعی که شما بخواهید استفاده خواهیم کرد</b></li>
+          <li><b>ربات اختصاصی شما در بله</b> راه‌اندازی می‌شود</li>
+          <li><b>نصب و آموزش تیم پذیرش</b> توسط ما، به همراه پنل چندنفره</li>
+          <li>گزارش دوره‌ای، سقف کاملاً سفارشی و پشتیبانی ویژه</li>
+          <li class="head">در همه پلن‌ها:</li>
+          <li><b>خرید بسته اضافه</b> از داخل پنل، بدون تماس و بدون ارتقای پلن</li>
+        </ul>
+        <a class="btn ghost" href="/#how">تماس برای پلن حرفه‌ای</a>
       </div>
-      <ul>
-        <li class="head">مناسب مراکزی که…</li>
-        <li>حجم مکالمات بالاست و می‌خواهند به‌ازای هر پیام واقعی حساب کنند</li>
-        <li class="head">به استاندارد اضافه می‌شود:</li>
-        <li><b>مدل هوش مصنوعی دیپ‌سیک</b> — صورتحساب از روی شمارنده پیام‌ها (۱٬۵۰۰ پیام در ماه)</li>
-        <li><b>ادامه خودکار چت در قطعی AI</b> — پذیرش هیچ‌وقت نمی‌ایستد</li>
-        <li>از بازخورد کارکنان شما یاد می‌گیرد</li>
-        <li><b>پنل چندنفره</b> — افزودن ادمین دوم و بیشتر برای تیم پذیرش</li>
-        <li>پشتیبانی با اولویت‌تر</li>
-        <li class="no">ندارد: ربات بله و انتخاب آزاد مدل هوش مصنوعی</li>
-      </ul>
-      <a class="btn" href="/#how">شروع حرفه‌ای</a>
+
     </div>
 
-    <div class="plan popular">
-      <div class="tag">کامل‌ترین ✨</div>
-      <h3>۴. کامل (مدل دلخواه + بله)</h3>
-      <div class="mode">با هر مدل هوش مصنوعی که بخواهید + ربات اختصاصی بله + آموزش تیم — بدون محدودیت سقف</div>
-      <div class="price" style="font-size:16px;color:#2E5E4E;">تماس بگیرید <small>— قیمت سفارشی، بدون شوک!</small></div>
-      <div class="quota">
-        <div><div class="n">سفارشی</div><div class="l">معرفی مشاور / ماه</div></div>
-        <div><div class="n">نامحدود</div><div class="l">پیام هوشمند / ماه</div></div>
+    <div class="bale">
+      <div>
+        <h3>ربات بله چیست؟</h3>
+        <p>نسخه پیام‌رسانی همین سامانه: مراجع در اپلیکیشن «بله» با ربات اختصاصی مرکز شما صحبت می‌کند، آزمون سلامت روان می‌دهد و مشاور معرفی‌شده را همان‌جا دریافت می‌کند. این قابلیت یک سرویس راه‌اندازی دستی است: ربات را تیم ما برای مرکز شما می‌سازد و تحویل می‌دهد.</p>
       </div>
-      <ul>
-        <li class="head">مناسب مراکزی که…</li>
-        <li>می‌خواهند هر مدل هوش مصنوعی‌ای را که بخواهند انتخاب کنند و کنترل کامل هزینه را داشته باشند</li>
-        <li class="head">به حرفه‌ای اضافه می‌شود:</li>
-        <li><b>با هر مدل هوش مصنوعی که شما بخواهید استفاده خواهیم کرد</b></li>
-        <li><b>🤖 ربات اختصاصی شما در بله</b> راه‌اندازی می‌شود</li>
-        <li><b>نصب و آموزش تیم پذیرش</b> توسط ما + پنل چندنفره</li>
-        <li>گزارش دوره‌ای + سقف کاملاً سفارشی + پشتیبانی ویژه</li>
-        <li class="head">همهٔ پلن‌ها:</li>
-        <li><b>خرید بستهٔ اضافه</b> از داخل پنل — بدون تماس، بدون ارتقای پلن</li>
-      </ul>
-      <a class="btn gold" href="/#how">تماس برای پلن کامل</a>
+      <span class="only">فقط در پلن حرفه‌ای</span>
+    </div>
+  </section>
+
+  <section>
+    <h2>مقایسه سه پلن</h2>
+    <p class="sub">هر ستون یک پرش واقعی نسبت به ستون قبلی است. قیمت‌ها به تومان.</p>
+    <div class="tablewrap">
+    <table class="compare">
+      <tr><th>چه چیزی می‌گیرید؟</th><th>پایه</th><th>استاندارد</th><th>حرفه‌ای</th></tr>
+      <tr><td>قیمت ماهانه (تومان)</td><td><b>۱٬۹۶۰٬۰۰۰</b></td><td><b>۴٬۹۸۰٬۰۰۰</b></td><td><b>تماس بگیرید</b></td></tr>
+      <tr><td>قیمت سالانه (تومان)، ۲ ماه رایگان</td><td><b>۱۹٬۶۰۰٬۰۰۰</b></td><td><b>۴۹٬۸۰۰٬۰۰۰</b></td><td><b>مذاکره‌ای</b></td></tr>
+      <tr><td>سقف معرفی مشاور / ماه</td><td><b>۳۰</b></td><td><b>۸۰</b></td><td><b>سفارشی</b></td></tr>
+      <tr><td>سقف پیام هوشمند / ماه</td><td>—</td><td><b>۱٬۵۰۰</b></td><td><b>نامحدود</b></td></tr>
+      <tr><td>چت ۲۴ ساعته، لید، اکسل و GHQ-28</td><td>✓</td><td>✓</td><td>✓</td></tr>
+      <tr><td>ثبت اطلاعات برای فرزند، خانواده یا دوست</td><td>✓</td><td>✓</td><td>✓</td></tr>
+      <tr><td><b>مدل هوش مصنوعی</b></td><td>—</td><td><b>دیپ‌سیک</b></td><td><b>هر مدلی که بخواهید</b></td></tr>
+      <tr><td>جواب طبیعی و فهم زبان مراجع</td><td>—</td><td><b>✓</b></td><td>✓</td></tr>
+      <tr><td>معرفی خودکار مشاور با دلیل</td><td><b>موتور قاعده‌ای</b></td><td><b>هوش مصنوعی</b></td><td>✓</td></tr>
+      <tr><td>ادامه خودکار چت در قطعی هوش مصنوعی</td><td>—</td><td><b>✓</b></td><td>✓</td></tr>
+      <tr><td>یادگیری از بازخورد کارکنان و پشتیبانی اولویت‌دار</td><td>—</td><td><b>✓</b></td><td>✓</td></tr>
+      <tr><td>پنل چندنفره (افزودن ادمین دوم)</td><td>—</td><td><b>✓</b></td><td>✓</td></tr>
+      <tr><td>آموزش تیم و گزارش دوره‌ای</td><td>—</td><td>—</td><td><b>✓</b></td></tr>
+      <tr><td>راه‌اندازی ربات اختصاصی بله (توسط تیم ما)</td><td>—</td><td>—</td><td><b>✓</b></td></tr>
+      <tr><td>خرید بسته اضافه پیام و معرفی از داخل پنل</td><td><b>✓</b></td><td><b>✓</b></td><td><b>✓</b></td></tr>
+    </table>
     </div>
 
-  </div>
-
-  <div class="bale">
-    <div class="ico">🤖</div>
-    <div>
-      <h3>ربات بله چیست؟</h3>
-      <p>نسخه پیام‌رسانی همین سامانه: مراجع در اپلیکیشن «بله» با ربات اختصاصی مرکز شما صحبت می‌کند، آزمون سلامت روان می‌دهد و مشاور معرفی‌شده را همان‌جا دریافت می‌کند. این قابلیت یک سرویس راه‌اندازی دستی است: ربات را تیم ما برای مرکز شما می‌سازد و تحویل می‌دهد — و فقط در پلن «کامل» ارائه می‌شود.</p>
+    <div class="note">
+      <b>دو نوع هوش مصنوعی، یک انتخاب ساده:</b> «استاندارد» یعنی مدل دیپ‌سیک، «حرفه‌ای» یعنی مدل دلخواه شما. نام مدل را در پنل اعلام می‌کنید و ما برایتان راه‌اندازی می‌کنیم.<br>
+      از پلن «پایه» با ۱٬۹۶۰٬۰۰۰ تومان شروع کنید و هر زمان خواستید ارتقا دهید. اشتراک ماهانه یا سالانه است: پرداخت ۱۰ ماه، ۱۲ ماه سرویس، یعنی ۲ ماه رایگان. پلن «حرفه‌ای» قیمت ثابت ندارد و با شما مذاکره می‌شود.
     </div>
-    <span class="pill">فقط در پلن کامل ✨</span>
-  </div>
 
-  <h2>مقایسه چهار پلن</h2>
-  <p class="sub">هر ستون یک پرش واقعی نسبت به ستون قبلی — قیمت‌ها به تومان</p>
-  <div style="overflow-x:auto;">
-  <table class="compare">
-    <tr><th>چه چیزی می‌گیرید؟</th><th>پایه</th><th>استاندارد</th><th>حرفه‌ای</th><th>کامل</th></tr>
-    <tr><td>قیمت ماهانه (تومان)</td><td><b>۹۸۰٬۰۰۰</b></td><td><b>۲٬۵۸۰٬۰۰۰</b></td><td><b>۴٬۹۸۰٬۰۰۰</b></td><td><b>تماس بگیرید</b></td></tr>
-    <tr><td>قیمت سالانه (تومان) — ۲ ماه رایگان</td><td><b>۹٬۸۰۰٬۰۰۰</b></td><td><b>۲۵٬۸۰۰٬۰۰۰</b></td><td><b>۴۹٬۸۰۰٬۰۰۰</b></td><td><b>مذاکره‌ای</b></td></tr>
-    <tr><td>سقف معرفی مشاور / ماه</td><td><b>۳۰</b></td><td><b>۵۰</b></td><td><b>۸۰</b></td><td><b>سفارشی</b></td></tr>
-    <tr><td>سقف پیام هوشمند / ماه</td><td>—</td><td><b>۵۰۰</b></td><td><b>۱٬۵۰۰</b></td><td><b>نامحدود</b></td></tr>
-    <tr><td>چت ۲۴ ساعته + لید + اکسل + GHQ-28</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
-    <tr><td>ثبت اطلاعات برای فرزند/خانواده/دوست</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
-    <tr><td><b>مدل هوش مصنوعی</b></td><td>—</td><td><b>مدل عمومی ما (کیفیت کمتر)</b></td><td><b>دیپ‌سیک</b></td><td><b>هر مدلی که بخواهید</b></td></tr>
-    <tr><td>جواب طبیعی و فهم زبان مراجع (هوش مصنوعی)</td><td>—</td><td><b>✓</b></td><td>✓</td><td>✓</td></tr>
-    <tr><td>معرفی خودکار مشاور با دلیل</td><td><b>موتور قاعده‌ای</b></td><td><b>هوش مصنوعی</b></td><td>✓</td><td>✓</td></tr>
-    <tr><td>ادامه خودکار چت در قطعی هوش مصنوعی</td><td>—</td><td>—</td><td><b>✓</b></td><td>✓</td></tr>
-    <tr><td>یادگیری از بازخورد کارکنان + پشتیبانی اولویت‌دار</td><td>—</td><td>—</td><td><b>✓</b></td><td>✓</td></tr>
-    <tr><td>پنل چندنفره (افزودن ادمین دوم)</td><td>—</td><td>—</td><td><b>✓</b></td><td>✓</td></tr>
-    <tr><td>آموزش تیم + گزارش سفارشی</td><td>—</td><td>—</td><td>—</td><td><b>✓</b></td></tr>
-    <tr><td>راه‌اندازی ربات اختصاصی بله <span style="font-weight:400;color:#888;">(توسط تیم ما)</span></td><td>—</td><td>—</td><td>—</td><td><b>✓</b></td></tr>
-    <tr><td>خرید بستهٔ اضافهٔ پیام/معرفی از داخل پنل</td><td><b>✓</b></td><td><b>✓</b></td><td><b>✓</b></td><td><b>✓</b></td></tr>
-  </table>
-  </div>
-
-  <div class="note">
-    💡 <b>سه نوع هوش مصنوعی، یک انتخاب ساده:</b> «استاندارد» = یک مدل عمومی که ما انتخاب می‌کنیم (کیفیت کمتر) · «حرفه‌ای» = مدل دیپ‌سیک · «کامل» = مدل دلخواه شما (نام مدل را در پنل اعلام می‌کنید و ما برایتان راه‌اندازی می‌کنیم).<br>
-    از پلن «پایه» با ۹۸۰٬۰۰۰ تومان شروع کنید و در هر زمان ارتقا دهید. اشتراک ماهانه یا سالانه (پرداخت ۱۰ ماه، ۱۲ ماه سرویس = ۲ ماه رایگان). پلن «کامل» قیمت ثابت ندارد و با شما مذاکره می‌شود.
-  </div>
-
-  <div class="note" style="background:#f0f6f3;border-color:#cfe0d8;color:#1e4634;">
-    📖 <b>«پیام هوشمند» یعنی چه؟</b> هر پیام مراجع که در پردازشش از هوش مصنوعی استفاده شده باشد. پاسخ‌های از پیش‌تعیین‌شده (خوش‌آمد، رد شمارهٔ نامعتبر، پرسش‌های آزمون GHQ) شمرده نمی‌شوند؛ پس سقف فقط وقتی کم می‌شود که واقعاً از AI استفاده شده باشد. شمارندهٔ مصرف را در پنل خودتان می‌بینید. <b>هر دو شمارنده (پیام هوشمند و معرفی مشاور) در اول هر ماه خودکار صفر می‌شوند.</b><br>
-    🎁 <b>سقف تمام شد؟</b> بستهٔ اضافه را از داخل پنل بخرید — میزانِ اضافه روی سقف شما می‌نشیند و اعتبارش با ریست ماهانه پاک نمی‌شود. ارتقای پلن لازم نیست.
-  </div>
-</section>
+    <div class="note">
+      <b>«پیام هوشمند» یعنی چه؟</b> هر پیام مراجع که در پردازش آن از هوش مصنوعی استفاده شده باشد. پاسخ‌های از پیش‌تعیین‌شده، مثل خوش‌آمد، رد شماره نامعتبر و پرسش‌های آزمون GHQ، شمرده نمی‌شوند؛ پس سقف فقط وقتی کم می‌شود که واقعاً از هوش مصنوعی استفاده شده باشد. شمارنده مصرف را در پنل خودتان می‌بینید. <b>هر دو شمارنده، پیام هوشمند و معرفی مشاور، در اول هر ماه خودکار صفر می‌شوند.</b><br>
+      <b>سقف تمام شد؟</b> بسته اضافه را از داخل پنل بخرید. میزان اضافه روی سقف شما می‌نشیند و اعتبارش با ریست ماهانه پاک نمی‌شود. ارتقای پلن لازم نیست.
+    </div>
+  </section>
+</main>
 
 <footer>
-  🌿 دستیار پذیرش هوشمند — ساخته‌شده با ❤️ برای مراکز مشاوره ایران<br>
+  دستیار پذیرش هوشمند، برای مراکز مشاوره ایران<br>
   <a href="/">خانه</a> · <a href="/admin">ورود به پنل</a>
 </footer>
 <script>

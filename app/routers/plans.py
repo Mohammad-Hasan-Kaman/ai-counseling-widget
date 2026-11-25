@@ -35,6 +35,8 @@ def _parse_quota(raw: str) -> int:
         raise ValueError("سقف باید عدد صحیح باشد (-1 = نامحدود).")
     if v < -1:
         raise ValueError("سقف نمی‌تواند کمتر از -1 باشد.")
+    if v > plan_service.MAX_INT:
+        raise ValueError("سقف بیش از حد بزرگ است.")
     return v
 
 

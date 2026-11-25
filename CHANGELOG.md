@@ -5,6 +5,33 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0]
+
+### Changed
+
+- Plan tiers restructured from four to three (migration 16): the old
+  Standard tier (operator's generic model) was removed and its features
+  merged into the tier above it; tier names shifted one step down —
+  Base is unchanged, the old Professional (DeepSeek) is now **Standard**,
+  and the old Complete tier is now **Professional**. Feature sets and
+  limits travel with each plan's content; the periodic-report gate now
+  reads the stored tier (`pro`), and Standard's old limits (500 smart
+  messages / 50 introductions) were *not* carried over — the merged
+  Standard keeps 1,500 / 80.
+- Landing page, pricing page and the admin-panel shell were redesigned
+  (warm paper neutrals, the brand green as the single accent, hairline
+  separators instead of shadows, no decorative gradients or emoji).
+
+### Added
+
+- Hardened super-admin editing of per-plan monthly limits (smart
+  messages, counselor introductions): values are range-validated
+  (`-1` = unlimited, oversized values rejected with a form error
+  instead of a database overflow), and `plan.create` / `plan.update`
+  audit entries now record the limit values — updates include the
+  previous values. Panel end-to-end tests cover edit → store →
+  enforcement → restore.
+
 ## [2.0.0]
 
 ### Added

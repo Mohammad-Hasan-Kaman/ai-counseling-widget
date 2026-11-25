@@ -5,55 +5,94 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>دستیار پذیرش هوشمند — ویجت گفتگو برای مراکز مشاوره</title>
 <style>
-  :root { --green: #2E5E4E; --green2: #3e7a63; --gold: #d4a94e; }
+  /* سیستم طراحی (بازطراحی ۲۰۲۶-۱۱-۲۵): کاغذ گرم، جوهر، یک لهجهٔ سبزِ برند.
+     لحظهٔ اصلی صفحه، خودِ محصول است: پیش‌نمایش واقعی گفت‌وگوی ویجت. */
+  :root {
+    --paper: #faf9f5; --surface: #fff; --ink: #20241f; --ink2: #4c534c;
+    --muted: #6d7268; --line: #e4e2d9; --green: #2E5E4E; --green-deep: #24493c;
+    --tint: #eef3f0;
+  }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: Vazirmatn, Tahoma, sans-serif; background: #fff; color: #222; }
-  nav { position: sticky; top: 0; z-index: 100; background: rgba(255,255,255,.95); backdrop-filter: blur(8px); border-bottom: 1px solid #eee; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; }
-  nav .logo { color: var(--green); font-weight: 800; font-size: 17px; }
-  nav .links a { color: #555; text-decoration: none; margin-inline-start: 20px; font-size: 13px; }
+  body { font-family: Vazirmatn, Tahoma, sans-serif; background: var(--paper); color: var(--ink); }
+  a { color: var(--green); }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+  nav { position: sticky; top: 0; z-index: 100; background: var(--paper); border-bottom: 1px solid var(--line); padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; }
+  nav .logo { color: var(--ink); font-weight: 700; font-size: 16px; text-decoration: none; display: flex; align-items: center; gap: 8px; }
+  nav .logo svg { flex: none; }
+  nav .links a { color: var(--ink2); text-decoration: none; margin-inline-start: 22px; font-size: 13.5px; }
   nav .links a:hover { color: var(--green); }
-  .btn { background: var(--green); color: #fff; border: none; padding: 12px 30px; border-radius: 30px; cursor: pointer; font-family: inherit; font-size: 14px; font-weight: 700; text-decoration: none; display: inline-block; box-shadow: 0 6px 20px rgba(46,94,78,.3); transition: transform .15s; }
-  .btn:hover { transform: translateY(-2px); background: #254c3f; }
-  .btn.ghost { background: transparent; color: var(--green); border: 2px solid var(--green); box-shadow: none; }
-  .hero { background: linear-gradient(135deg, var(--green), var(--green2) 60%, #4d9379); color: #fff; padding: 90px 24px 110px; text-align: center; position: relative; overflow: hidden; }
-  .hero::after { content: ""; position: absolute; bottom: -60px; left: -10%; right: -10%; height: 120px; background: #fff; border-radius: 50% 50% 0 0; }
-  .hero .badge { display: inline-block; background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.35); border-radius: 20px; padding: 5px 18px; font-size: 13px; margin-bottom: 20px; }
-  .hero h1 { font-size: clamp(26px, 5vw, 44px); margin-bottom: 16px; line-height: 1.5; }
-  .hero h1 .gold { color: var(--gold); }
-  .hero p { opacity: .92; font-size: 16px; max-width: 620px; margin: 0 auto 30px; line-height: 2; }
-  .hero .cta { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; position: relative; z-index: 2; }
-  .hero .cta .btn.ghost { color: #fff; border-color: rgba(255,255,255,.7); }
-  .stats { display: flex; justify-content: center; gap: 40px; flex-wrap: wrap; padding: 30px 20px 10px; position: relative; z-index: 2; margin-top: 40px; }
-  .stats .stat { text-align: center; }
-  .stats .num { font-size: 30px; font-weight: 800; }
-  .stats .lbl { font-size: 13px; opacity: .85; }
-  section { max-width: 1000px; margin: 0 auto; padding: 70px 24px 20px; }
-  section h2 { color: var(--green); font-size: 24px; text-align: center; margin-bottom: 10px; }
-  section .sub { color: #777; text-align: center; font-size: 14px; margin-bottom: 40px; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 18px; }
-  .fcard { background: #f7faf8; border: 1px solid #e3ece8; border-radius: 16px; padding: 26px 22px; transition: transform .15s, box-shadow .15s; }
-  .fcard:hover { transform: translateY(-4px); box-shadow: 0 10px 28px rgba(46,94,78,.12); }
-  .fcard .ico { font-size: 34px; margin-bottom: 12px; }
-  .fcard b { display: block; font-size: 16px; margin-bottom: 8px; color: var(--green); }
-  .fcard p { font-size: 13px; line-height: 1.9; color: #555; }
-  .steps { display: flex; gap: 0; justify-content: center; flex-wrap: wrap; margin-top: 10px; }
-  .step { flex: 1; min-width: 180px; text-align: center; padding: 20px 10px; position: relative; }
-  .step .n { width: 52px; height: 52px; border-radius: 50%; background: var(--green); color: #fff; font-size: 22px; font-weight: 800; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; }
-  .step b { display: block; font-size: 14px; margin-bottom: 6px; }
-  .step p { font-size: 12px; color: #777; line-height: 1.8; }
-  .pricing-note { background: #fff8e6; border: 1.5px solid #f0d48a; border-radius: 16px; padding: 30px; text-align: center; margin-top: 10px; }
-  .pricing-note b { font-size: 17px; color: #6b5310; }
-  .pricing-note p { font-size: 13px; color: #8a7434; margin: 10px 0 20px; line-height: 2; }
-  footer { background: var(--green); color: #cfe0d8; text-align: center; padding: 34px 20px; margin-top: 70px; font-size: 13px; line-height: 2; }
+  .btn { background: var(--green); color: #fff; border: 1px solid var(--green); padding: 12px 26px; border-radius: 10px; cursor: pointer; font-family: inherit; font-size: 14px; font-weight: 600; text-decoration: none; display: inline-block; transition: background .15s ease; }
+  .btn:hover { background: var(--green-deep); }
+  .btn.ghost { background: transparent; color: var(--green); }
+  .btn.ghost:hover { background: var(--tint); }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+  .hero { padding: 64px 0 56px; }
+  .hero-grid { display: grid; grid-template-columns: 1.05fr .95fr; gap: 48px; align-items: center; }
+  @media (max-width: 860px) { .hero-grid { grid-template-columns: 1fr; gap: 36px; } }
+  .hero h1 { font-size: clamp(26px, 4.2vw, 40px); line-height: 1.45; font-weight: 700; margin-bottom: 18px; }
+  .hero h1 .accent { color: var(--green); }
+  .hero p.lead { font-size: 15.5px; line-height: 2.05; color: var(--ink2); max-width: 520px; margin-bottom: 28px; }
+  .hero .cta { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  .hero .cta .more { font-size: 13.5px; text-decoration: none; font-weight: 600; }
+  .ledger { display: flex; flex-wrap: wrap; gap: 0; margin-top: 44px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .ledger div { padding: 14px 20px 14px 0; margin-inline-end: 20px; border-inline-end: 1px solid var(--line); padding-inline-end: 20px; }
+  .ledger div:last-child { border-inline-end: none; }
+  .ledger .n { font-size: 19px; font-weight: 700; color: var(--green); font-variant-numeric: tabular-nums; }
+  .ledger .l { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  /* پیش‌نمایش ویجت: همان چیزی که مراجع روی سایت مرکز می‌بیند */
+  .preview-cap { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+  .chatbox { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+  .chatbox .chead { background: var(--green); color: #fff; padding: 13px 18px; display: flex; justify-content: space-between; align-items: center; }
+  .chatbox .chead b { font-size: 14px; font-weight: 600; }
+  .chatbox .chead span { font-size: 11.5px; opacity: .85; }
+  .chatbox .cbody { padding: 18px; display: flex; flex-direction: column; gap: 10px; background: #fcfcfa; }
+  .msg { max-width: 82%; padding: 10px 14px; border-radius: 12px; font-size: 13px; line-height: 1.95; }
+  .msg.bot { background: var(--tint); color: var(--ink); align-self: flex-start; border-start-start-radius: 4px; }
+  .msg.user { background: var(--green); color: #fff; align-self: flex-end; border-start-end-radius: 4px; }
+  .refcard { align-self: stretch; border: 1.5px solid var(--green); border-radius: 12px; padding: 14px 16px; background: var(--surface); }
+  .refcard .rt { font-size: 11.5px; color: var(--muted); margin-bottom: 6px; }
+  .refcard b { font-size: 14px; color: var(--ink); display: block; margin-bottom: 4px; }
+  .refcard p { font-size: 12.5px; color: var(--ink2); line-height: 1.9; }
+
+  section { padding: 56px 0 8px; }
+  section h2 { font-size: 23px; font-weight: 700; margin-bottom: 10px; }
+  section .sub { color: var(--muted); font-size: 14px; line-height: 2; margin-bottom: 36px; max-width: 640px; }
+  .feat-lead { display: grid; grid-template-columns: 1fr 1fr; gap: 0 48px; }
+  @media (max-width: 760px) { .feat-lead { grid-template-columns: 1fr; } }
+  .feat { border-top: 2px solid var(--green); padding: 18px 0 26px; }
+  .feat b { display: block; font-size: 16.5px; margin-bottom: 8px; }
+  .feat p { font-size: 13.5px; line-height: 2; color: var(--ink2); }
+  .feat-rows { margin-top: 6px; }
+  .feat-row { display: grid; grid-template-columns: 220px 1fr; gap: 16px; padding: 15px 0; border-top: 1px solid var(--line); }
+  @media (max-width: 640px) { .feat-row { grid-template-columns: 1fr; gap: 4px; } }
+  .feat-row b { font-size: 14.5px; }
+  .feat-row p { font-size: 13.5px; line-height: 1.95; color: var(--ink2); }
+
+  .steps { border-top: 1px solid var(--line); }
+  .step { display: grid; grid-template-columns: 56px 200px 1fr; gap: 16px; padding: 20px 0; border-bottom: 1px solid var(--line); align-items: baseline; }
+  @media (max-width: 640px) { .step { grid-template-columns: 40px 1fr; } .step p { grid-column: 2; } }
+  .step .n { font-size: 22px; font-weight: 700; color: var(--green); font-variant-numeric: tabular-nums; }
+  .step b { font-size: 15px; }
+  .step p { font-size: 13.5px; color: var(--ink2); line-height: 1.95; }
+
+  .pricing-note { border: 1px solid var(--line); border-inline-start: 3px solid var(--green); background: var(--surface); border-radius: 12px; padding: 28px; margin-top: 8px; }
+  .pricing-note b.title { font-size: 17px; display: block; margin-bottom: 10px; }
+  .pricing-note p { font-size: 13.5px; color: var(--ink2); line-height: 2.05; margin-bottom: 20px; }
+  footer { background: var(--green-deep); color: #cfe0d8; text-align: center; padding: 36px 20px; margin-top: 72px; font-size: 13px; line-height: 2.1; }
   footer a { color: #fff; }
-  .float-note { position: fixed; bottom: 92px; left: 24px; background: #fff; border: 1px solid #e3ece8; border-radius: 14px; box-shadow: 0 8px 28px rgba(0,0,0,.14); padding: 10px 16px; font-size: 12px; color: #555; z-index: 2147483000; max-width: 230px; line-height: 1.9; animation: floaty 3s ease-in-out infinite; display: none; }
-  @keyframes floaty { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+  .float-note { position: fixed; bottom: 92px; left: 24px; background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 10px 16px; font-size: 12px; color: var(--ink2); z-index: 2147483000; max-width: 230px; line-height: 1.9; display: none; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 </style>
 </head>
 <body>
 
 <nav>
-  <div class="logo">🌿 دستیار پذیرش هوشمند</div>
+  <a class="logo" href="/">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 21c-4.5-2.6-7-6.6-7-11.2C5 5.6 7.6 3 11 3c.4 4.9 2.3 8.3 6.5 10.4C15.6 17 14 19.3 12 21Z" fill="#2E5E4E"/><path d="M12 21c.6-5.4 2.8-9.9 7-13" stroke="#2E5E4E" stroke-width="1.6" stroke-linecap="round"/></svg>
+    دستیار پذیرش هوشمند
+  </a>
   <div class="links">
     <a href="#features">امکانات</a>
     <a href="#how">نحوه کار</a>
@@ -62,57 +101,86 @@
   </div>
 </nav>
 
-<div class="hero">
-  <div class="badge">✨ ساخته‌شده برای مراکز مشاوره و درمانی</div>
-  <h1>مراجع خود را <span class="gold">هوشمند</span> پذیرش کنید،<br>حتی وقتی خوابید</h1>
-  <p>ویجت چت فارسی که در سایت شما نصب می‌شود: اطلاعات مراجع را می‌گیرد، غربالگری می‌کند، مشاور مناسب را معرفی می‌کند و لید را در پنل شما ثبت می‌کند.</p>
-  <div class="cta">
-    <a class="btn" href="#how">چطور کار می‌کند؟</a>
-    <a class="btn ghost" href="/pricing">مشاهده قیمت‌گذاری</a>
+<main class="wrap">
+  <div class="hero">
+    <div class="hero-grid">
+      <div>
+        <h1>پذیرش مراجع، <span class="accent">حتی وقتی مرکز تعطیل است</span></h1>
+        <p class="lead">ویجت گفت‌وگوی فارسی که روی سایت مرکز شما نصب می‌شود: اطلاعات مراجع را می‌گیرد، غربالگری سلامت روان انجام می‌دهد، مشاور مناسب را با دلیل معرفی می‌کند و همه را در پنل شما ثبت می‌کند.</p>
+        <div class="cta">
+          <a class="btn" href="/pricing">مشاهده پلن‌ها و قیمت‌ها</a>
+          <a class="more" href="#how">نحوه کار</a>
+        </div>
+        <div class="ledger">
+          <div><div class="n">۲۴/۷</div><div class="l">پذیرش بدون توقف</div></div>
+          <div><div class="n">۲۸</div><div class="l">سؤال غربالگری GHQ</div></div>
+          <div><div class="n">۳</div><div class="l">پلن اشتراکی</div></div>
+          <div><div class="n">۱</div><div class="l">خط کد برای نصب</div></div>
+        </div>
+      </div>
+      <div>
+        <div class="preview-cap">پیش‌نمایش ویجت، همان‌طور که مراجع روی سایت شما می‌بیند</div>
+        <div class="chatbox" aria-label="نمونه گفت‌وگوی ویجت پذیرش">
+          <div class="chead"><b>پذیرش آنلاین مرکز مشاوره</b><span>پاسخ‌گویی خودکار</span></div>
+          <div class="cbody">
+            <div class="msg bot">سلام، وقت شما بخیر. برای معرفی مشاور مناسب، چند سؤال کوتاه می‌پرسم. موضوع اصلی مراجعه‌تان چیست؟</div>
+            <div class="msg user">چند وقته اضطراب و استرس شدید دارم و خوابم به‌هم ریخته.</div>
+            <div class="msg bot">متوجه شدم. بر اساس موضوع، سابقه و نوبت‌های آزاد، این مشاور برای شما مناسب‌تر است:</div>
+            <div class="refcard">
+              <div class="rt">معرفی مشاور</div>
+              <b>مشاور متخصص اضطراب و اختلال خواب</b>
+              <p>دلیل معرفی: تطابق موضوع مراجعه با تخصص مشاور و نزدیک‌ترین نوبت آزاد این هفته. مشخصات شما برای مرکز ثبت شد تا برای هماهنگی تماس بگیرند.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
-  <div class="stats">
-    <div class="stat"><div class="num">۲۴/۷</div><div class="lbl">پذیرش بدون توقف</div></div>
-    <div class="stat"><div class="num">۴</div><div class="lbl">پلن اشتراکی شفاف</div></div>
-    <div class="stat"><div class="num">۲۸</div><div class="lbl">سؤال غربالگری GHQ</div></div>
-    <div class="stat"><div class="num">۱</div><div class="lbl">خط کد برای نصب</div></div>
-  </div>
-</div>
 
-<section id="features">
-  <h2>چرا دستیار پذیرش هوشمند؟</h2>
-  <p class="sub">هرچه که یک منشی دقیق انجام می‌دهد — فقط سریع‌تر، دقیق‌تر و بدون خستگی</p>
-  <div class="grid">
-    <div class="fcard"><div class="ico">🧠</div><b>موتور تطبیق مشاور</b><p>بر اساس موضوع، سن، جنسیت، شعبه، نمره GHQ و نوبت‌های آزاد سایت، بهترین مشاوران را با دلیل پیشنهاد می‌دهد.</p></div>
-    <div class="fcard"><div class="ico">📋</div><b>آزمون GHQ-28</b><p>غربالگری سلامت عمومی با ۲۸ سؤال استاندارد و تحلیل بالینی خودکار — قبل از اولین جلسه.</p></div>
-    <div class="fcard"><div class="ico">📥</div><b>ثبت لید و خروجی اکسل</b><p>هر گفتگو با تمام جزئیات ذخیره می‌شود؛ با یک کلیک خروجی اکسل برای تیم فروش بگیرید.</p></div>
-    <div class="fcard"><div class="ico">⚙️</div><b>فلوی کاملاً قابل تنظیم</b><p>سؤالات، پیام خوش‌آمد و نحوه پایان گفتگو را از پنل خودتان و بدون کدنویسی تغییر دهید.</p></div>
-    <div class="fcard"><div class="ico">📣</div><b>اطلاعیه همگانی</b><p>تخفیف، ساعت کاری جدید یا هر خبری را یک‌بار بنویسید تا همه بازدیدکنندگان ببینند.</p></div>
-    <div class="fcard"><div class="ico">🔑</div><b>امن و چندمشتری</b><p>هر مرکز کلید API و پنل جداگانه خودش را دارد؛ داده‌ها کاملاً ایزوله‌اند.</p></div>
-  </div>
-</section>
+  <section id="features">
+    <h2>کار منشی پذیرش، بدون توقف</h2>
+    <p class="sub">هرچه یک منشی دقیق انجام می‌دهد: سؤال می‌پرسد، غربالگری می‌کند، مشاور معرفی می‌کند و پرونده را مرتب تحویل می‌دهد.</p>
+    <div class="feat-lead">
+      <div class="feat">
+        <b>موتور تطبیق مشاور</b>
+        <p>بر اساس موضوع مراجعه، سن، جنسیت، شعبه، نمره GHQ و نوبت‌های آزاد سایت، بهترین مشاوران را با ذکر دلیل پیشنهاد می‌دهد، نه یک فهرست تصادفی.</p>
+      </div>
+      <div class="feat">
+        <b>آزمون GHQ-28</b>
+        <p>غربالگری سلامت عمومی با ۲۸ سؤال و تحلیل خودکار نمره، پیش از اولین جلسه، تا مشاور با تصویر روشن‌تری از وضعیت مراجع شروع کند.</p>
+      </div>
+    </div>
+    <div class="feat-rows">
+      <div class="feat-row"><b>ثبت لید و خروجی اکسل</b><p>هر گفت‌وگو با تمام جزئیات در پنل مرکز ذخیره می‌شود و با یک کلیک خروجی اکسل برای تیم پذیرش می‌گیرید.</p></div>
+      <div class="feat-row"><b>فلوی کاملاً قابل تنظیم</b><p>سؤالات، پیام خوش‌آمد و نحوه پایان گفت‌وگو را از پنل خودتان و بدون کدنویسی تغییر می‌دهید.</p></div>
+      <div class="feat-row"><b>اطلاعیه همگانی</b><p>تخفیف، ساعت کاری جدید یا هر خبر مرکز را یک‌بار می‌نویسید تا همه بازدیدکنندگان ببینند.</p></div>
+      <div class="feat-row"><b>امن و جدا برای هر مرکز</b><p>هر مرکز کلید و پنل جداگانه خودش را دارد و داده‌های مراجعان هر مرکز کاملاً جدا از بقیه نگه داشته می‌شود.</p></div>
+    </div>
+  </section>
 
-<section id="how">
-  <h2>در ۳ قدم راه بیفتید</h2>
-  <p class="sub">از ثبت‌نام تا اولین لید، کمتر از یک روز</p>
-  <div class="steps">
-    <div class="step"><div class="n">۱</div><b>کلید API بگیرید</b><p>با ما تماس بگیرید تا حساب و کلید اختصاصی مرکز شما ساخته شود</p></div>
-    <div class="step"><div class="n">۲</div><b>یک خط کد بگذارید</b><p>اسکریپت ویجت را قبل از تگ پایانی body سایتتان قرار دهید</p></div>
-    <div class="step"><div class="n">۳</div><b>لید بگیرید</b><p>گفتگوها، درخواست‌ها و آمار را در پنل خودتان ببینید و خروجی اکسل بگیرید</p></div>
-  </div>
-</section>
+  <section id="how">
+    <h2>راه‌اندازی در سه قدم</h2>
+    <p class="sub">از ثبت‌نام تا اولین لید، کمتر از یک روز.</p>
+    <div class="steps">
+      <div class="step"><div class="n">۱</div><b>کلید اختصاصی بگیرید</b><p>با ما تماس بگیرید تا حساب و کلید اختصاصی مرکز شما ساخته شود.</p></div>
+      <div class="step"><div class="n">۲</div><b>یک خط کد بگذارید</b><p>اسکریپت ویجت را پیش از تگ پایانی body سایتتان قرار دهید.</p></div>
+      <div class="step"><div class="n">۳</div><b>لید بگیرید</b><p>گفت‌وگوها، درخواست‌ها و آمار را در پنل خودتان ببینید و خروجی اکسل بگیرید.</p></div>
+    </div>
+  </section>
 
-<section id="pricing">
-  <h2>اول امتحان کنید، بعد تصمیم بگیرید</h2>
-  <p class="sub">پس از راه‌اندازی حساب شما، دموی اختصاصی مرکز خودتان را از پنل مدیریت می‌بینید</p>
-  <div class="pricing-note">
-    <b>💰 چهار پلن، سه نوع هوش مصنوعی</b>
-    <p>پایه بدون AI · استاندارد با <b>مدل تصادفی ما</b> (کیفیت کمتر) · حرفه‌ای با <b>دیپ‌سیک</b> · کامل با <b>هر مدلی که بخواهید</b> + ربات بله.<br>از ۹۸۰٬۰۰۰ تومان در ماه · سالانه ۲ ماه رایگان.</p>
-    <a class="btn" href="/pricing">مشاهده پلن‌ها و قیمت‌ها</a>
-  </div>
-</section>
+  <section id="pricing">
+    <h2>اول امتحان کنید، بعد تصمیم بگیرید</h2>
+    <p class="sub">پس از راه‌اندازی حساب شما، دموی اختصاصی مرکز خودتان را از پنل مدیریت می‌بینید.</p>
+    <div class="pricing-note">
+      <b class="title">سه پلن، دو نوع هوش مصنوعی</b>
+      <p>پایه بدون هوش مصنوعی، استاندارد با <b>دیپ‌سیک</b>، حرفه‌ای با <b>هر مدلی که بخواهید</b> و ربات بله.<br>از ۱٬۹۶۰٬۰۰۰ تومان در ماه، با اشتراک سالانه دو ماه رایگان.</p>
+      <a class="btn" href="/pricing">مشاهده پلن‌ها و قیمت‌ها</a>
+    </div>
+  </section>
+</main>
 
 <footer>
-  🌿 دستیار پذیرش هوشمند — ساخته‌شده با ❤️ برای مراکز مشاوره ایران<br>
+  دستیار پذیرش هوشمند، برای مراکز مشاوره ایران<br>
   <a href="/pricing">قیمت‌گذاری</a> · <a href="/admin">ورود به پنل</a>
 </footer>
 

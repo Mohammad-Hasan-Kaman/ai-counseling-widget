@@ -42,7 +42,7 @@ def test_create_medium_requires_llm_fields(dbs):
         plan_service.create_plan("ناقص", plan_service.MODE_MEDIUM)
     pid = plan_service.create_plan(
         "متوسط کامل", plan_service.MODE_MEDIUM,
-        model="test-chat", base_url="https://api.example.com/v1",
+        model="deepseek-chat", base_url="https://api.example.com/v1",
         api_key="sk-test", message_quota=100, introduction_quota=50,
     )
     plan = plan_service.get_plan(pid)
@@ -214,7 +214,7 @@ def test_super_admin_pages_render(dbs):
 
 
 def test_tenant_has_mode_gates_learning_and_extra_admins(dbs, tenant):
-    """یادگیری از بازخورد و پنل چندنفره فقط روی پلن حرفه‌ای/کامل (advanced)"""
+    """یادگیری از بازخورد و پنل چندنفره فقط روی پلن‌های advanced (استاندارد/حرفه‌ای)"""
     tid = tenant["tenant_id"]
     assert plan_service.tenant_has_mode(tid, plan_service.MODE_ADVANCED) is False  # بدون پلن
 
@@ -224,12 +224,12 @@ def test_tenant_has_mode_gates_learning_and_extra_admins(dbs, tenant):
     assert plan_service.tenant_has_mode(tid, plan_service.MODE_ADVANCED) is False
 
     med = plan_service.create_plan(
-        "پلن استاندارد گیت", plan_service.MODE_MEDIUM, model="m",
+        "پلن متوسط گیت", plan_service.MODE_MEDIUM, model="m",
         base_url="https://api.example.com/v1", api_key="sk-med", introduction_quota=50,
     )
     plan_service.assign_plan(tid, med, "tester")
     assert plan_service.tenant_has_mode(tid, plan_service.MODE_ADVANCED) is False, \
-        "استاندارد نباید یادگیری/پنل چندنفره داشته باشد (طبق جدول قیمت)"
+        "متوسط (medium) نباید یادگیری/پنل چندنفره داشته باشد (طبق جدول قیمت)"
 
     adv = plan_service.create_plan(
         "پلن پیشرفته گیت", plan_service.MODE_ADVANCED, model="gpt-x",
@@ -237,6 +237,178 @@ def test_tenant_has_mode_gates_learning_and_extra_admins(dbs, tenant):
     )
     plan_service.assign_plan(tid, adv, "tester")
     assert plan_service.tenant_has_mode(tid, plan_service.MODE_ADVANCED) is True
+
+
+def _super_client():
+    """TestClient واردشده به‌عنوان سوپرادمین"""
+    import os
+    from fastapi.testclient import TestClient
+    from app.main import app
+    # سطل rate-limit ورود بین همهٔ تست‌ها مشترک است (۱۰ تلاش/IP)؛ مثل
+    # test_tenant_llm و test_topups قبل از ورود خالی‌اش می‌کنیم تا
+    # ورودهای این تست، بودجهٔ تست‌های بعدی را نخورد.
+    from app.config import USER_RECORDS_DB
+    from app.db import get_conn
+    conn = get_conn(USER_RECORDS_DB)
+    try:
+        conn.execute("DELETE FROM rate_limits WHERE key LIKE 'login:%'")
+        conn.commit()
+    finally:
+        conn.close()
+    client = TestClient(app)
+    r = client.post(
+        "/admin/login",
+        data={"username": os.environ.get("SUPER_ADMIN_USERNAME", "superadmin"),
+              "password": os.environ.get("SUPER_ADMIN_PASSWORD", "test_super_pass")},
+        headers={"Origin": "http://testserver"},
+        follow_redirects=False,
+    )
+    assert r.status_code == 303, r.text
+    return client
+
+
+def _plan_form_data(plan, **overrides):
+    data = {
+        "name": plan["name"], "mode": plan["mode"], "model": plan["model"],
+        "base_url": plan["base_url"], "api_key": "",
+        "message_quota": str(plan["message_quota"]),
+        "introduction_quota": str(plan["introduction_quota"]),
+        "tier": plan["tier"],
+    }
+    data.update(overrides)
+    return data
+
+
+def test_panel_edit_plan_limits_end_to_end(dbs, tenant):
+    """سوپرادمین از پنل سقف‌های پلن را عوض می‌کند؛ ذخیره و اجرا هر دو همان را می‌بینند"""
+    pid = plan_service.create_plan(
+        "پیشرفته قابل ویرایش از پنل", plan_service.MODE_ADVANCED, model="gpt-x",
+        base_url="https://api.example.com/v1", api_key="sk-edit",
+        message_quota=1500, introduction_quota=80, created_by="tester",
+    )
+    client = _super_client()
+
+    # فرم ویرایش، سقف‌های فعلی را نشان می‌دهد
+    r = client.get(f"/admin/super/plans/{pid}/edit")
+    assert r.status_code == 200
+    assert 'value="1500"' in r.text and 'value="80"' in r.text
+
+    plan = plan_service.get_plan(pid)
+    r = client.post(
+        f"/admin/super/plans/{pid}",
+        data=_plan_form_data(plan, message_quota="3", introduction_quota="2"),
+        headers={"Origin": "http://testserver"},
+    )
+    assert r.status_code == 200, r.text
+    plan = plan_service.get_plan(pid)
+    assert plan["message_quota"] == 3
+    assert plan["introduction_quota"] == 2
+
+    # اجرا (enforcement) همان مقادیر ذخیره‌شده را می‌خواند — بدون تغییر کد
+    tid = tenant["tenant_id"]
+    plan_service.assign_plan(tid, pid, "tester")
+    assert plan_service.increment_messages(tid) is True
+    assert plan_service.increment_messages(tid) is True
+    assert plan_service.increment_messages(tid) is True
+    locked, reason = plan_service.check_lock(tid)
+    assert locked and reason == "message_quota"
+    plan_service.reset_quotas(tid, "tester")
+    assert plan_service.increment_introductions(tid) is True
+    assert plan_service.increment_introductions(tid) is True
+    assert plan_service.increment_introductions(tid) is False  # سقف جدید: ۲
+
+    # برگرداندن مقادیر اصلی از همان مسیر پنل
+    plan = plan_service.get_plan(pid)
+    r = client.post(
+        f"/admin/super/plans/{pid}",
+        data=_plan_form_data(plan, message_quota="1500", introduction_quota="80"),
+        headers={"Origin": "http://testserver"},
+    )
+    assert r.status_code == 200, r.text
+    plan = plan_service.get_plan(pid)
+    assert plan["message_quota"] == 1500
+    assert plan["introduction_quota"] == 80
+
+
+def test_panel_plan_quota_unlimited_and_validation(dbs):
+    """خالی در فرم = نامحدود؛ کمتر از ‎-1‎ و عددِ غول‌پیکر خطای تمیز می‌دهند، نه ۵۰۰"""
+    pid = plan_service.create_plan(
+        "پلن اعتبارسنجی پنل", plan_service.MODE_ADVANCED, model="gpt-x",
+        base_url="https://api.example.com/v1", api_key="sk-val",
+        message_quota=100, introduction_quota=10, created_by="tester",
+    )
+    client = _super_client()
+    plan = plan_service.get_plan(pid)
+
+    r = client.post(
+        f"/admin/super/plans/{pid}",
+        data=_plan_form_data(plan, message_quota="", introduction_quota=""),
+        headers={"Origin": "http://testserver"},
+    )
+    assert r.status_code == 200, r.text
+    plan = plan_service.get_plan(pid)
+    assert plan["message_quota"] == plan_service.UNLIMITED
+    assert plan["introduction_quota"] == plan_service.UNLIMITED
+
+    r = client.post(
+        f"/admin/super/plans/{pid}",
+        data=_plan_form_data(plan, message_quota="-5"),
+        headers={"Origin": "http://testserver"},
+    )
+    assert r.status_code == 200, r.text
+    assert "کمتر از" in r.text
+    assert plan_service.get_plan(pid)["message_quota"] == plan_service.UNLIMITED
+
+    r = client.post(
+        f"/admin/super/plans/{pid}",
+        data=_plan_form_data(plan, message_quota="99999999999999999999999999"),
+        headers={"Origin": "http://testserver"},
+    )
+    assert r.status_code == 200, r.text
+    assert "بیش از حد بزرگ" in r.text
+    assert plan_service.get_plan(pid)["message_quota"] == plan_service.UNLIMITED
+
+
+def test_plan_quota_service_bounds(dbs):
+    with pytest.raises(ValueError):
+        plan_service.create_plan("بد", plan_service.MODE_WEAK, message_quota=-2)
+    with pytest.raises(ValueError):
+        plan_service.create_plan("بد", plan_service.MODE_WEAK,
+                                 introduction_quota=10 ** 25)
+    pid = plan_service.create_plan("مرزی", plan_service.MODE_WEAK, introduction_quota=5)
+    plan = plan_service.get_plan(pid)
+    with pytest.raises(ValueError):
+        plan_service.update_plan(
+            pid, plan["name"], plan["mode"],
+            message_quota=plan_service.MAX_INT + 1,
+            introduction_quota=plan["introduction_quota"],
+        )
+    # دقیقاً روی مرز مجاز است
+    plan_service.update_plan(
+        pid, plan["name"], plan["mode"],
+        message_quota=plan_service.MAX_INT,
+        introduction_quota=plan["introduction_quota"],
+    )
+    assert plan_service.get_plan(pid)["message_quota"] == plan_service.MAX_INT
+
+
+def test_plan_update_audit_records_quota_change(dbs):
+    pid = plan_service.create_plan(
+        "پلن ممیزی سقف", plan_service.MODE_WEAK,
+        message_quota=-1, introduction_quota=10, created_by="tester",
+    )
+    plan = plan_service.get_plan(pid)
+    plan_service.update_plan(
+        pid, plan["name"], plan["mode"],
+        message_quota=-1, introduction_quota=20, updated_by="tester",
+    )
+    from app import audit_service
+    entries = [a for a in audit_service.recent(100)
+               if a["action"] == "plan.update" and a["details"].get("plan_id") == pid]
+    assert entries, "plan.update در لاگ ممیزی نیست"
+    d = entries[0]["details"]
+    assert d["introduction_quota"] == 20
+    assert d["previous_introduction_quota"] == 10
 
 
 def test_add_admin_blocked_on_weak_plan(dbs, tenant):
@@ -264,11 +436,11 @@ def test_add_admin_blocked_on_weak_plan(dbs, tenant):
         headers={"Origin": "http://testserver"},
         follow_redirects=False,
     )
-    assert "فقط در پلن‌های حرفه‌ای و کامل" in blocked.text
+    assert "فقط در پلن‌های استاندارد و حرفه‌ای" in blocked.text
 
-    # استاندارد (medium) هم نباید پنل چندنفره داشته باشد
+    # متوسط (medium) هم نباید پنل چندنفره داشته باشد
     med = plan_service.create_plan(
-        "پلن استاندارد چندنفره", plan_service.MODE_MEDIUM, model="m",
+        "پلن متوسط چندنفره", plan_service.MODE_MEDIUM, model="m",
         base_url="https://api.example.com/v1", api_key="sk-m", introduction_quota=50,
     )
     plan_service.assign_plan(tenant["tenant_id"], med, "tester")
@@ -278,4 +450,4 @@ def test_add_admin_blocked_on_weak_plan(dbs, tenant):
         headers={"Origin": "http://testserver"},
         follow_redirects=False,
     )
-    assert "فقط در پلن‌های حرفه‌ای و کامل" in blocked2.text
+    assert "فقط در پلن‌های استاندارد و حرفه‌ای" in blocked2.text

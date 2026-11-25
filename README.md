@@ -66,6 +66,21 @@ Visitors chat with the widget instead of filling a form:
 - Per-plan quotas: monthly message quota and counselor-introduction
   quota, metered per tenant, with monthly reset, plan upgrades, and a
   full plan-change history.
+- Commercial tiers on top of the three modes (the production pricing
+  page, `static/pricing.html`): **Base** — Weak mode, no AI, unlimited
+  messages, 30 introductions/month, 1,960,000 تومان/month;
+  **Standard** — Advanced mode on DeepSeek, 1,500 smart messages / 80
+  introductions per month, 4,980,000 تومان/month; **Pro** — Advanced
+  mode on the customer's own model, unlimited smart messages / 200
+  introductions per month, negotiated pricing, and the only tier with
+  the periodic report and the Bale bot. The feature gates read the
+  tier stored on the plan, never the quota values.
+- Super-admin plan editing: both monthly limits (smart messages and
+  counselor introductions) are editable per plan from the plan form.
+  Blank or `-1` means unlimited; values are validated (non-negative,
+  size-capped) and every change is audit-logged with its previous
+  values. Enforcement reads only the stored plan values — no quota
+  number is hardcoded in the chat or introduction paths.
 - Top-ups: the operator defines top-up packages; tenants request them
   from their panel and the super admin approves them — no payment-gateway
   dependency in code.
@@ -150,7 +165,7 @@ full list. The important ones:
 
 ## Tests
 
-264 tests cover the matching engine, flow state machine, GHQ scoring,
+268 tests cover the matching engine, flow state machine, GHQ scoring,
 plans/tiers/upgrades, metering, monthly quotas, top-ups, per-tenant LLM
 configuration, crawl leasing, rate limiting, and tenant isolation:
 
@@ -176,8 +191,11 @@ orphan pruning, appointment backfill).
   tells the visitor this up front.
 - GHQ-28 is a standardized instrument (Goldberg); review its licensing
   for your jurisdiction before commercial use.
-- Prices are operator-defined data (plans carry a `price_rials` field);
-  no prices, payment gateway, or real tenant data ship in this repo.
+- Plan prices are presentation data on the public pricing page
+  (`static/pricing.html`); plan records themselves carry mode, tier and
+  quotas, and top-up packages carry a `price_rials`. There is no payment
+  gateway in code (plans are assigned by the super admin), and no real
+  tenant data ships in this repo.
 
 ## License
 

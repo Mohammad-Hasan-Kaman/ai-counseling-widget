@@ -13,12 +13,12 @@
 
 <div class="panel">
   <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
-    <h2 style="margin:0;">📦 پلن‌ها (الگوهای قابل تخصیص)</h2>
-    <a class="btn" href="/admin/super/plans/new">➕ ساخت پلن جدید</a>
+    <h2 style="margin:0;">پلن‌ها (الگوهای قابل تخصیص)</h2>
+    <a class="btn" href="/admin/super/plans/new">ساخت پلن جدید</a>
   </div>
   <table style="margin-top:14px;">
     <tr>
-      <th>نام</th><th>نوع</th><th>مدل</th><th>سقف پیام</th><th>سقف معرفی</th><th>فعال</th><th></th>
+      <th>نام</th><th>نوع</th><th>مدل</th><th>پیام هوشمند / ماه</th><th>معرفی مشاور / ماه</th><th>فعال</th><th></th>
     </tr>
     {% for p in plans %}
     <tr>
@@ -28,7 +28,7 @@
       <td>{% if p.mode == 'weak' %}<span style="color:#999;">— (بدون LLM)</span>{% elif p.message_quota < 0 %}نامحدود{% else %}{{ p.message_quota }}{% endif %}</td>
       <td>{% if p.introduction_quota < 0 %}نامحدود{% else %}{{ p.introduction_quota }}{% endif %}</td>
       <td>{% if p.active %}<span class="badge-on">بله</span>{% else %}<span class="badge-off">خیر</span>{% endif %}</td>
-      <td><a class="btn small" href="/admin/super/plans/{{ p.id }}/edit">✏️ ویرایش</a></td>
+      <td><a class="btn small" href="/admin/super/plans/{{ p.id }}/edit">ویرایش</a></td>
     </tr>
     {% else %}
     <tr><td colspan="7" style="color:#888;">هنوز پلنی ساخته نشده. اولین پلن را بسازید و به مشتری‌ها تخصیص دهید — بدون پلن، ویجت مشتری قفل است.</td></tr>
@@ -37,9 +37,9 @@
 </div>
 
 <div class="panel">
-  <h2>📊 مصرف مشتری‌ها</h2>
+  <h2>مصرف مشتری‌ها</h2>
   <table>
-    <tr><th>مشتری</th><th>پلن</th><th>پیام LLM</th><th>معرفی</th><th>تاریخ تخصیص</th></tr>
+    <tr><th>مشتری</th><th>پلن</th><th>پیام هوشمند</th><th>معرفی</th><th>تاریخ تخصیص</th></tr>
     {% for row in usage_rows %}
     <tr>
       <td>{{ row.tenant_name }}</td>
@@ -55,7 +55,7 @@
 </div>
 
 <div class="panel">
-  <h2>📜 لاگ اقدامات اخیر (ممیزی)</h2>
+  <h2>لاگ اقدامات اخیر (ممیزی)</h2>
   {% if audit %}
   <table>
     <tr><th>زمان</th><th>کاربر</th><th>اکشن</th><th>جزئیات</th></tr>
