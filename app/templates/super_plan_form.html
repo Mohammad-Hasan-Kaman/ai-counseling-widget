@@ -14,7 +14,7 @@
 {% endif %}
 
 <div class="panel">
-  <h2>{% if plan %}✏️ ویرایش پلن «{{ plan.name }}»{% else %}➕ ساخت پلن جدید{% endif %}</h2>
+  <h2>{% if plan %}ویرایش پلن «{{ plan.name }}»{% else %}ساخت پلن جدید{% endif %}</h2>
 
   <form method="post" action="{% if plan %}/admin/super/plans/{{ plan.id }}{% else %}/admin/super/plans{% endif %}">
     <div class="row">
@@ -57,11 +57,11 @@
     <br>
     <div class="row">
       <div>
-        <label style="font-size:12px;">سقف پیام LLM (عدد یا خالی=نامحدود؛ فقط پلن LLM‌دار)</label>
+        <label style="font-size:12px;">سقف پیام هوشمند در ماه (عدد یا خالی=نامحدود؛ فقط پلن LLM‌دار)</label>
         <input type="number" name="message_quota" value="{{ plan.message_quota if plan else -1 }}" min="-1" class="llm-field">
       </div>
       <div>
-        <label style="font-size:12px;">سقف معرفی مشاور (عدد یا خالی=نامحدود)</label>
+        <label style="font-size:12px;">سقف معرفی مشاور در ماه (عدد یا خالی=نامحدود)</label>
         <input type="number" name="introduction_quota" value="{{ plan.introduction_quota if plan else -1 }}" min="-1">
       </div>
       <div style="flex:0;">
@@ -69,16 +69,16 @@
       </div>
     </div>
     <p style="font-size:11px;color:#777;margin-top:10px;">
-      ℹ️ سقف <b>-1 یا خالی = نامحدود</b>؛ صفر = از همان ابتدا قفل. سقف معرفی بعد از هر بار نمایش معرفی مشاور ۱ واحد کم می‌شود.
+      سقف <b>-1 یا خالی = نامحدود</b>؛ صفر = از همان ابتدا قفل. سقف معرفی بعد از هر بار نمایش معرفی مشاور ۱ واحد کم می‌شود.
       پلن «ضعیف» هیچ فراخوانی LLM ندارد.
     </p>
     <p style="font-size:11px;color:#777;">
-      🏷️ <b>ردهٔ فروش</b> تعیین می‌کند کدام قابلیت‌های تجاری باز باشند: فقط <b>«کامل»</b> به
+      <b>ردهٔ فروش</b> تعیین می‌کند کدام قابلیت‌های تجاری باز باشند: فقط <b>«حرفه‌ای»</b> به
       <a href="/admin/report">گزارش دوره‌ای</a> دسترسی دارد. این رده از سقف‌ها مستقل است — عوض‌کردن سقف،
       گزارشِ مشتری را خاموش نمی‌کند.
     </p>
     <p style="font-size:11px;color:#a33;margin-top:6px;" id="tier-warn" hidden>
-      ⚠️ این رده با نوع پلنِ انتخابی سازگار نیست؛ گزینه‌های ممکن بالا محدود شدند.
+      این رده با نوع پلنِ انتخابی سازگار نیست؛ گزینه‌های ممکن بالا محدود شدند.
     </p>
   </form>
 
@@ -88,34 +88,35 @@
     <input type="hidden" name="model" id="test_model" value="{{ plan.model if plan else '' }}">
     <input type="hidden" name="api_key" id="test_api_key" value="">
     <p style="font-size:12px;color:#666;">
-      🧪 قبل از ذخیره، مقادیر فرم بالا (base_url، مدل و کلید) با «تست اتصال» بررسی می‌شوند.
+      قبل از ذخیره، مقادیر فرم بالا (base_url، مدل و کلید) با «تست اتصال» بررسی می‌شوند.
       کلید خالی در حالت ویرایش = استفاده از کلید ذخیره‌شده.
     </p>
     <button class="btn small" onclick="
       document.getElementById('test_base_url').value = document.querySelector('[name=base_url]').value;
       document.getElementById('test_model').value = document.querySelector('[name=model]').value;
       document.getElementById('test_api_key').value = document.querySelector('[name=api_key]').value;
-    ">🔬 تست اتصال LLM</button>
+    ">تست اتصال LLM</button>
   </form>
 </div>
 {% endblock %}
 {% block scripts %}
 <script>
-// هر ردهٔ فروش فقط روی یک mode معنا دارد (پایه→ضعیف، استاندارد→متوسط،
-// حرفه‌ای/کامل→پیشرفته). دو select مستقل‌اند، پس بدون این هم‌بندی می‌شد پلنی
-// ساخت که مثلاً «کامل» است ولی حالتِ «ضعیف» دارد — یعنی قابلیت‌های ناسازگار.
+// هر ردهٔ فروش فقط روی modeهای خودش معنا دارد (پایه→ضعیف،
+// استاندارد→متوسط یا پیشرفته، حرفه‌ای→پیشرفته). دو select مستقل‌اند، پس
+// بدون این هم‌بندی می‌شد پلنی ساخت که مثلاً «حرفه‌ای» است ولی حالتِ
+// «ضعیف» دارد — یعنی قابلیت‌های ناسازگار.
 (function () {
   var modeSel = document.getElementById('mode-select');
   var tierSel = document.getElementById('tier-select');
   var warn = document.getElementById('tier-warn');
   if (!modeSel || !tierSel) return;
-  var ALL = { base: 'weak', standard: 'medium', pro: 'advanced', full: 'advanced' };
+  var ALL = { base: ['weak'], standard: ['medium', 'advanced'], pro: ['advanced'] };
 
   function sync() {
     var mode = modeSel.value;
     var touched = false;
     Array.prototype.forEach.call(tierSel.options, function (o) {
-      var ok = ALL[o.value] === mode;
+      var ok = (ALL[o.value] || []).indexOf(mode) !== -1;
       o.disabled = !ok;
       if (!ok && o.selected) touched = true;
     });

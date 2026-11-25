@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""گزارش دوره‌ای پنل مشتری — صفحه + خروجی اکسل (فقط پلن «کامل»)."""
+"""گزارش دوره‌ای پنل مشتری — صفحه + خروجی اکسل (فقط پلن «حرفه‌ای»)."""
 from datetime import datetime
 
 from fastapi import APIRouter, Request, HTTPException
@@ -14,12 +14,12 @@ from app.routers.panel_common import _render, _current_user
 router = APIRouter(prefix="/admin", tags=["report"], include_in_schema=False)
 
 XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-BLOCKED = "گزارش دوره‌ای فقط در پلن «کامل» فعال است."
+BLOCKED = "گزارش دوره‌ای فقط در پلن «حرفه‌ای» فعال است."
 
 
 async def _guard(request: Request):
     """(user, tenant_id, deny). deny = RedirectResponse برای لاگین، یا «blocked»
-    وقتی پلن «کامل» نباشد — user همیشه برمی‌گردد تا صفحهٔ داشبورد با پیام رندر شود."""
+    وقتی پلن «حرفه‌ای» نباشد — user همیشه برمی‌گردد تا صفحهٔ داشبورد با پیام رندر شود."""
     user = _current_user(request)
     if not user:
         return None, None, RedirectResponse("/admin/login", status_code=303)

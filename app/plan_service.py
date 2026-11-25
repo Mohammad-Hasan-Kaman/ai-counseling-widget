@@ -26,30 +26,31 @@ MODE_LABELS = {
 }
 UNLIMITED = -1
 
-# چهار ردهٔ جدول قیمت. «حرفه‌ای» و «کامل» هر دو MODE_ADVANCED هستند، پس mode
-# به‌تنهایی فرقشان را درنمی‌آورد — ردهٔ تجاری جداگانه روی خودِ پلن نگهداری
-# می‌شود و قابلیت‌های فقط-«کامل» (گزارش دوره‌ای) از همین خوانده می‌شوند.
+# سه ردهٔ جدول قیمت (بازساخت ۲۰۲۶-۱۱-۲۵ به دستور مالک): پلن «استاندارد»ی
+# قدیم (مدل عمومی ما) حذف شد، امکاناتش به پلن بالاتر منتقل شد و نام رده‌ها
+# یکی عقب آمد — «حرفه‌ای»ی قدیم (دیپ‌سیک) حالا «استاندارد» است و «کامل»ی
+# قدیم حالا «حرفه‌ای». «استاندارد» و «حرفه‌ای» هر دو MODE_ADVANCED هستند،
+# پس mode به‌تنهایی فرقشان را درنمی‌آورد — ردهٔ تجاری جداگانه روی خودِ پلن
+# نگهداری می‌شود و قابلیت فقط-«حرفه‌ای» (گزارش دوره‌ای) از همین خوانده می‌شود.
 TIER_BASE = "base"
 TIER_STANDARD = "standard"
 TIER_PRO = "pro"
-TIER_FULL = "full"
-TIERS = (TIER_BASE, TIER_STANDARD, TIER_PRO, TIER_FULL)
+TIERS = (TIER_BASE, TIER_STANDARD, TIER_PRO)
 TIER_LABELS = {
     TIER_BASE: "پایه — بدون هوش مصنوعی",
-    TIER_STANDARD: "استاندارد — مدل توسط ما",
-    TIER_PRO: "حرفه‌ای — دیپ‌سیک",
-    TIER_FULL: "کامل — مدل دلخواه مشتری",
+    TIER_STANDARD: "استاندارد — دیپ‌سیک",
+    TIER_PRO: "حرفه‌ای — مدل دلخواه مشتری",
 }
 
 
 def tier_for(mode: str, message_quota: int) -> str:
-    """ردهٔ پیش‌فرض از mode و سقف — همان چیزی که مهاجرت ۶ برای پلن‌های
-    موجود ثبت کرده. فرم پلن این را پیشنهاد می‌دهد و سوپرادمین می‌تواند عوضش کند."""
+    """ردهٔ پیش‌فرض از mode و سقف. فرم پلن این را پیشنهاد می‌دهد و
+    سوپرادمین می‌تواند عوضش کند."""
     if mode == MODE_WEAK:
         return TIER_BASE
     if mode == MODE_MEDIUM:
         return TIER_STANDARD
-    return TIER_FULL if message_quota == UNLIMITED else TIER_PRO
+    return TIER_PRO if message_quota == UNLIMITED else TIER_STANDARD
 
 
 DEFAULT_LOCK_MESSAGE = (
@@ -127,22 +128,41 @@ def _validate_tier(tier: str) -> str:
     return tier
 
 
-# هر ردهٔ تجاری فقط روی یک mode معنا دارد. فرمِ پلن دو select مستقل دارد،
-# پس بدون این چهار می‌شد پلنی ساخت که مثلاً mode=weak ولی tier=full —
-# یعنی مشتریِ بدون AI با پلنِ کامل. بعضی گیت‌ها tier می‌خوانند و بعضی
-# mode، پس چنین ناسازگاری یعنی قابلیت‌های نامسویِ فروخته‌شده.
+def _validate_quota_value(value, field_label: str) -> int:
+    """سقفِ پلن: ‎-1‎ = نامحدود، وگرنه عددِ نامنفی تا MAX_INT.
+
+    سقفِ بالا همان دلیلی است که _clean_quota برای سقفِ اختصاصی دارد:
+    عددِ بزرگ‌تر از ظرفیتِ INTEGER اسکولایت با OverflowError می‌ترکد و
+    در روت گرفته نمی‌شود (۵۰۰). سقفِ فرمِ پلن قبلاً این نگهبان را نداشت."""
+    try:
+        v = int(value)
+    except (TypeError, ValueError):
+        raise ValueError(f"{field_label} باید عدد صحیح باشد (-1 = نامحدود).")
+    if v < UNLIMITED:
+        raise ValueError(f"{field_label} نمی‌تواند کمتر از ‎-1‎ باشد.")
+    if v > MAX_INT:
+        raise ValueError(f"{field_label} بیش از حد بزرگ است.")
+    return v
+
+
+# هر ردهٔ تجاری فقط روی modeهای خودش معنا دارد: «پایه» فقط ضعیف،
+# «حرفه‌ای» فقط پیشرفته، و «استاندارد» (ردهٔ میانی) متوسط یا پیشرفتهٔ
+# سقف‌دار. فرمِ پلن دو select مستقل دارد، پس بدون این می‌شد پلنی ساخت که
+# مثلاً mode=weak ولی tier=pro — یعنی مشتریِ بدون AI با پلنِ حرفه‌ای.
+# بعضی گیت‌ها tier می‌خوانند و بعضی mode، پس چنین ناسازگاری یعنی
+# قابلیت‌های نامسویِ فروخته‌شده.
 _TIER_MODE = {
-    TIER_BASE: MODE_WEAK,
-    TIER_STANDARD: MODE_MEDIUM,
-    TIER_PRO: MODE_ADVANCED,
-    TIER_FULL: MODE_ADVANCED,
+    TIER_BASE: (MODE_WEAK,),
+    TIER_STANDARD: (MODE_MEDIUM, MODE_ADVANCED),
+    TIER_PRO: (MODE_ADVANCED,),
 }
 
 
 def _validate_tier_matches_mode(tier: str, mode: str) -> None:
-    if tier and _TIER_MODE.get(tier) != mode:
+    if tier and mode not in _TIER_MODE.get(tier, ()):
         expected = "، ".join(
-            lbl for t, m in _TIER_MODE.items() if m == mode for lbl in (TIER_LABELS[t],)
+            lbl for t, modes in _TIER_MODE.items() if mode in modes
+            for lbl in (TIER_LABELS[t],)
         )
         raise ValueError(
             f"ردهٔ «{TIER_LABELS[tier]}» با حالتِ «{MODE_LABELS.get(mode, mode)}» "
@@ -155,6 +175,8 @@ def create_plan(name: str, mode: str, model: str = "", base_url: str = "",
                 introduction_quota: int = UNLIMITED, created_by: str = "",
                 tier: str = "") -> int:
     _validate_plan_fields(mode, name, model, base_url, api_key)
+    message_quota = _validate_quota_value(message_quota, "سقف پیام هوشمند")
+    introduction_quota = _validate_quota_value(introduction_quota, "سقف معرفی مشاور")
     tier = _validate_tier(tier) or tier_for(mode, int(message_quota))
     _validate_tier_matches_mode(tier, mode)
     enc = encryption_service.encrypt_str((api_key or "").strip()) if mode != MODE_WEAK else ""
@@ -171,7 +193,9 @@ def create_plan(name: str, mode: str, model: str = "", base_url: str = "",
     finally:
         conn.close()
     audit_service.log(created_by, "plan.create",
-                      {"plan_id": plan_id, "name": name.strip(), "mode": mode, "tier": tier})
+                      {"plan_id": plan_id, "name": name.strip(), "mode": mode, "tier": tier,
+                       "message_quota": message_quota,
+                       "introduction_quota": introduction_quota})
     return plan_id
 
 
@@ -184,6 +208,8 @@ def update_plan(plan_id: int, name: str, mode: str, model: str = "", base_url: s
     if not existing:
         raise ValueError("پلن یافت نشد.")
     _validate_plan_fields(mode, name, model, base_url, api_key or existing["api_key_encrypted"])
+    message_quota = _validate_quota_value(message_quota, "سقف پیام هوشمند")
+    introduction_quota = _validate_quota_value(introduction_quota, "سقف معرفی مشاور")
     tier = _validate_tier(tier) or existing["tier"]
     _validate_tier_matches_mode(tier, mode)
     if mode == MODE_WEAK:
@@ -205,7 +231,11 @@ def update_plan(plan_id: int, name: str, mode: str, model: str = "", base_url: s
     finally:
         conn.close()
     audit_service.log(updated_by, "plan.update",
-                      {"plan_id": plan_id, "name": name.strip(), "mode": mode, "tier": tier})
+                      {"plan_id": plan_id, "name": name.strip(), "mode": mode, "tier": tier,
+                       "message_quota": message_quota,
+                       "introduction_quota": introduction_quota,
+                       "previous_message_quota": existing["message_quota"],
+                       "previous_introduction_quota": existing["introduction_quota"]})
 
 
 def get_decrypted_api_key(plan_id: int) -> str:
@@ -370,9 +400,9 @@ def tenant_has_mode(tenant_id: int, *modes: str) -> bool:
 
 
 def tenant_has_report(tenant_id: int) -> bool:
-    """گزارش دوره‌ای فقط در پلن «کامل».
+    """گزارش دوره‌ای فقط در پلن «حرفه‌ای».
 
-    «حرفه‌ای» و «کامل» هر دو MODE_ADVANCED هستند، پس mode فرقشان را درنمی‌آورد
+    «استاندارد» و «حرفه‌ای» هر دو MODE_ADVANCED هستند، پس mode فرقشان را درنمی‌آورد
     و ردهٔ تجاریِ plans.tier مرجع است. این رده از خودِ پلن خوانده می‌شود، نه از
     سقف پیام — وگرنه یک اشتباه تایپی در فرم سقف، گزارشِ خریده‌شدهٔ مشتری را
     خاموش می‌کرد (این دقیقاً همان اتفاقی بود که این گیتِ قبلی را بد می‌کرد)."""
@@ -380,7 +410,7 @@ def tenant_has_report(tenant_id: int) -> bool:
     if not state:
         return False
     plan = state["plan"]
-    return bool(plan["active"] and plan["tier"] == TIER_FULL)
+    return bool(plan["active"] and plan["tier"] == TIER_PRO)
 
 
 def _refill_if_month_elapsed(conn, tenant_id: int, last_reset: str | None) -> bool:

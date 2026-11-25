@@ -11,7 +11,7 @@ TEMPLATES = Jinja2Templates(directory=str(BASE_DIR / "app" / "templates"))
 
 
 def _render(request: Request, template: str, ctx: dict, status_code: int = 200):
-    # لینک «گزارش دوره‌ای» فقط برای پلن کامل و لینک «بستهٔ اضافه» فقط برای
+    # لینک «گزارش دوره‌ای» فقط برای پلن حرفه‌ای و لینک «بستهٔ اضافه» فقط برای
     # مشتریِ دارای پلن — یک جا محاسبه می‌شود تا همهٔ صفحات پنل بدون تکرار کد
     # به‌روز بمانند.
     user = ctx.get("user")

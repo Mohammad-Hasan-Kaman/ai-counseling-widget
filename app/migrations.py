@@ -391,6 +391,27 @@ def _mig_015_spouse_relation_step(conn):
                      (json.dumps(flow, ensure_ascii=False), tid))
 
 
+def _mig_016_plan_restructure(conn):
+    """بازساخت پلن‌ها (دستور مالک، ۲۰۲۶-۱۱-۲۵): پلن «استاندارد»ی قدیم
+    (مدل عمومی ما، mode=medium) حذف می‌شود، امکاناتش در جدول قیمت به پلن
+    بالاتر می‌رود و نام رده‌ها یکی عقب می‌آید: ردهٔ pro قدیم (حرفه‌ای،
+    دیپ‌سیک) می‌شود standard و ردهٔ full قدیم (کامل) می‌شود pro.
+
+    ترتیب دو UPDATE مهم است: اول pro→standard و بعد full→pro؛ برعکسش،
+    رده‌های تازه‌جابه‌جا را دوباره می‌برد.
+
+    پلنِ standard قدیم فقط وقتی حذف می‌شود که هیچ مشتری‌ای رویش نباشد —
+    اشتراکِ فعال کسی نباید با مهاجرت بشکند. (در دیتابیس زنده هنگام اعمال،
+    هیچ مشتری‌ای روی آن نبود.) ردیف‌های plan_history دست نمی‌خورند:
+    تاریخچهٔ تخصیص‌های گذشته است، نه ارجاع زنده."""
+    conn.execute("UPDATE plans SET tier='standard' WHERE tier='pro'")
+    conn.execute("UPDATE plans SET tier='pro' WHERE tier='full'")
+    conn.execute(
+        "DELETE FROM plans WHERE tier='standard' AND mode='medium' "
+        "AND id NOT IN (SELECT plan_id FROM tenant_plans)"
+    )
+
+
 _MIGRATIONS = [
     (1, _mig_001_plans_quotas),
     (2, _mig_002_for_other_step),
@@ -407,6 +428,7 @@ _MIGRATIONS = [
     (13, _mig_013_remove_expectation_step),
     (14, _mig_014_only_primary_unlocked),
     (15, _mig_015_spouse_relation_step),
+    (16, _mig_016_plan_restructure),
 ]
 
 

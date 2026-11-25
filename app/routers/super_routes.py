@@ -185,7 +185,7 @@ async def add_admin(request: Request, tenant_id: int,
         plan_service.tenant_has_mode, tenant_id, plan_service.MODE_ADVANCED
     ):
         return await _super_dashboard(
-            request, user, flash="❌ پنل چندنفره فقط در پلن‌های حرفه‌ای و کامل فعال است.",
+            request, user, flash="❌ پنل چندنفره فقط در پلن‌های استاندارد و حرفه‌ای فعال است.",
         )
 
     def _save():

@@ -146,7 +146,7 @@
       </form>
     </div>
 
-    {# پنل چندنفره فقط حرفه‌ای/کامل؛ گیت سمت سرور هم هست، این فقط فرم را پنهان می‌کند #}
+    {# پنل چندنفره فقط استاندارد/حرفه‌ای؛ گیت سمت سرور هم هست، این فقط فرم را پنهان می‌کند #}
     {% set tplan = plan_map.get(t.id) %}
     {% if tplan and tplan.mode in ['advanced'] %}
     <div class="op-row">
@@ -159,7 +159,7 @@
     </div>
     {% else %}
     <div class="op-row">
-      <span style="font-size:13px;color:#888;">افزودن ادمین دوم: فقط در پلن‌های <b>حرفه‌ای</b> و <b>کامل</b>.</span>
+      <span style="font-size:13px;color:#888;">افزودن ادمین دوم: فقط در پلن‌های <b>استاندارد</b> و <b>حرفه‌ای</b>.</span>
     </div>
     {% endif %}
 

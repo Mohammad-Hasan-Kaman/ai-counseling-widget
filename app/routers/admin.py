@@ -679,7 +679,7 @@ async def feedback(request: Request, counselor_name: str = Form(...), concept_nu
     ):
         return await _tenant_dashboard(
             request, user,
-            flash="❌ ثبت بازخورد و یادگیری سیستم فقط در پلن‌های حرفه‌ای و کامل فعال است.",
+            flash="❌ ثبت بازخورد و یادگیری سیستم فقط در پلن‌های استاندارد و حرفه‌ای فعال است.",
         )
 
     concept = FEEDBACK_CONCEPTS.get(concept_num)

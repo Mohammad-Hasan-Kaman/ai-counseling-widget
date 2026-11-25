@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""تست‌های گزارش دوره‌ای — گیت «فقط پلن کامل» + خروجی اکسل."""
+"""تست‌های گزارش دوره‌ای — گیت «فقط پلن حرفه‌ای» + خروجی اکسل."""
 import io
 import uuid
 
@@ -43,8 +43,8 @@ def _login(client, tenant):
 
 # ── گیت ──
 
-def test_report_gate_only_full_plan(dbs, tenant):
-    """کامل = advanced + سقف پیام نامحدود؛ حرفه‌ای (سقف ۱۵۰۰) گزارش ندارد"""
+def test_report_gate_only_pro_plan(dbs, tenant):
+    """حرفه‌ای = advanced + سقف پیام نامحدود؛ استاندارد (سقف ۱۵۰۰) گزارش ندارد"""
     tid = tenant["tenant_id"]
     assert plan_service.tenant_has_report(tid) is False  # بدون پلن
 
@@ -60,31 +60,31 @@ def test_report_gate_only_full_plan(dbs, tenant):
     plan_service.assign_plan(tid, med, "tester")
     assert plan_service.tenant_has_report(tid) is False
 
-    pro = _advanced("حرفه‌ای گزارش", 1500)  # سقف پیام حرفه‌ای
-    plan_service.assign_plan(tid, pro, "tester")
+    std = _advanced("استاندارد گزارش", 1500)  # سقف پیام استاندارد
+    plan_service.assign_plan(tid, std, "tester")
     assert plan_service.tenant_has_report(tid) is False, \
-        "حرفه‌ای گزارش دوره‌ای ندارد — فقط کامل (طبق جدول قیمت)"
+        "استاندارد گزارش دوره‌ای ندارد — فقط حرفه‌ای (طبق جدول قیمت)"
 
-    full = _advanced("کامل گزارش", plan_service.UNLIMITED)
+    full = _advanced("حرفه‌ای گزارش", plan_service.UNLIMITED)
     plan_service.assign_plan(tid, full, "tester")
     assert plan_service.tenant_has_report(tid) is True
 
 
 def test_report_gate_ignores_message_quota(dbs, tenant):
-    """«کامل» گزارش دارد حتی اگر سوپرادمین سقف پیامِ متناهی گذاشته باشد.
+    """«حرفه‌ای» گزارش دارد حتی اگر سوپرادمین سقف پیامِ متناهی گذاشته باشد.
 
-    تا پیش از ستون plans.tier، «کامل» از روی «سقف پیام = -1» تشخیص داده
+    تا پیش از ستون plans.tier، «حرفه‌ای» از روی «سقف پیام = -1» تشخیص داده
     می‌شد؛ یعنی یک اشتباه تایپی در فرم سقف، گزارشِ خریده‌شدهٔ مشتری را بی‌صدا
     خاموش می‌کرد. ردهٔ تجاری از سقف مستقل است."""
     tid = tenant["tenant_id"]
     plan_service.assign_plan(
-        tid, _advanced("کامل با سقف متناهی", 5000, tier=plan_service.TIER_FULL), "tester")
+        tid, _advanced("حرفه‌ای با سقف متناهی", 5000, tier=plan_service.TIER_PRO), "tester")
     assert plan_service.tenant_has_report(tid) is True
 
-    # برعکس: سقف نامحدود به‌تنهایی «کامل» نمی‌سازد
+    # برعکس: سقف نامحدود به‌تنهایی «حرفه‌ای» نمی‌سازد
     plan_service.assign_plan(
-        tid, _advanced("حرفه‌ای با سقف نامحدود", plan_service.UNLIMITED,
-                       tier=plan_service.TIER_PRO), "tester")
+        tid, _advanced("استاندارد با سقف نامحدود", plan_service.UNLIMITED,
+                       tier=plan_service.TIER_STANDARD), "tester")
     assert plan_service.tenant_has_report(tid) is False
 
 
@@ -101,9 +101,9 @@ def test_plan_tier_defaults_from_mode_and_quota(dbs):
     assert plan_service.get_plan(med)["tier"] == plan_service.TIER_STANDARD
 
     assert plan_service.get_plan(
-        _advanced("حرفه‌ای رده", 1500))["tier"] == plan_service.TIER_PRO
+        _advanced("استاندارد رده", 1500))["tier"] == plan_service.TIER_STANDARD
     assert plan_service.get_plan(
-        _advanced("کامل رده", plan_service.UNLIMITED))["tier"] == plan_service.TIER_FULL
+        _advanced("حرفه‌ای رده", plan_service.UNLIMITED))["tier"] == plan_service.TIER_PRO
 
 
 def test_invalid_tier_rejected(dbs):
@@ -189,28 +189,28 @@ def test_tenant_isolation(dbs, tenant):
 
 # ── مسیرها ──
 
-def test_report_page_blocked_for_pro_plan(dbs, tenant):
-    """حرفه‌ای: صفحهٔ گزارش به داشبورد برمی‌گردد با پیام «فقط پلن کامل»"""
+def test_report_page_blocked_for_standard_plan(dbs, tenant):
+    """استاندارد: صفحهٔ گزارش به داشبورد برمی‌گردد با پیام «فقط پلن حرفه‌ای»"""
     from fastapi.testclient import TestClient
     from app.main import app
     client = TestClient(app)
     _login(client, tenant)
-    plan_service.assign_plan(tenant["tenant_id"], _advanced("حرفه‌ای صفحه", 1500), "tester")
+    plan_service.assign_plan(tenant["tenant_id"], _advanced("استاندارد صفحه", 1500), "tester")
 
     r = client.get("/admin/report", follow_redirects=True)
     assert r.status_code == 200
-    assert "فقط در پلن «کامل»" in r.text
+    assert "فقط در پلن «حرفه‌ای»" in r.text
     # لینک گزارش هم نباید در ناوبری باشد
     assert "/admin/report/export" not in r.text
 
 
-def test_report_page_renders_for_full_plan(dbs, tenant):
+def test_report_page_renders_for_pro_plan(dbs, tenant):
     from fastapi.testclient import TestClient
     from app.main import app
     client = TestClient(app)
     _login(client, tenant)
     plan_service.assign_plan(
-        tenant["tenant_id"], _advanced("کامل صفحه", plan_service.UNLIMITED), "tester")
+        tenant["tenant_id"], _advanced("حرفه‌ای صفحه", plan_service.UNLIMITED), "tester")
 
     r = client.get("/admin/report")
     assert r.status_code == 200, r.text
@@ -235,7 +235,7 @@ def test_report_export_excel(dbs, tenant):
     client = TestClient(app)
     _login(client, tenant)
     plan_service.assign_plan(
-        tenant["tenant_id"], _advanced("کامل اکسل", plan_service.UNLIMITED), "tester")
+        tenant["tenant_id"], _advanced("حرفه‌ای اکسل", plan_service.UNLIMITED), "tester")
 
     r = client.get("/admin/report/export?days=7")
     assert r.status_code == 200, r.text
@@ -245,12 +245,12 @@ def test_report_export_excel(dbs, tenant):
     assert wb["روزانه"].max_row == 8  # هدر + ۷ روز
 
 
-def test_report_export_blocked_for_non_full(dbs, tenant):
+def test_report_export_blocked_for_non_pro(dbs, tenant):
     from fastapi.testclient import TestClient
     from app.main import app
     client = TestClient(app)
     _login(client, tenant)
-    plan_service.assign_plan(tenant["tenant_id"], _advanced("حرفه‌ای اکسل", 1500), "tester")
+    plan_service.assign_plan(tenant["tenant_id"], _advanced("استاندارد اکسل", 1500), "tester")
     assert client.get("/admin/report/export").status_code == 403
 
 
